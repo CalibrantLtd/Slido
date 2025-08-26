@@ -10,17 +10,27 @@
         <!-- Portfolio Selection -->
         <div class="selection-section">
           <h3 class="section-title">Select Portfolio</h3>
-          <div class="portfolio-grid">
-            <div
-              v-for="portfolio in portfolios"
-              :key="portfolio.id"
-              class="portfolio-card"
-              :class="{ 
-                'selected': selectedPortfolio?.id === portfolio.id
-              }"
-              @click="selectPortfolio(portfolio)"
+          <div class="portfolio-dropdown-container">
+            <div 
+              class="custom-dropdown"
+              :class="{ 'open': isDropdownOpen }"
+              @click="toggleDropdown"
             >
-              <div class="portfolio-name">{{ portfolio.name }}</div>
+              <div class="dropdown-selected" ref="dropdownRef">
+                {{ selectedPortfolio?.name || 'Choose a portfolio...' }}
+                <span class="dropdown-arrow">▼</span>
+              </div>
+            </div>
+            <div v-if="isDropdownOpen" class="dropdown-options">
+              <div
+                v-for="portfolio in sortedPortfolios"
+              :key="portfolio.id"
+                class="dropdown-option"
+                :class="{ 'selected': selectedPortfolio?.id === portfolio.id }"
+                @click.stop="selectPortfolio(portfolio)"
+              >
+                {{ portfolio.name }}
+              </div>
             </div>
           </div>
         </div>
@@ -28,21 +38,74 @@
         <!-- Bounce Selection -->
         <div v-if="selectedPortfolio" class="selection-section" ref="bouncesSection">
           <h3 class="section-title">Select Bounce</h3>
-          <div class="bounce-tree">
-            <div
-              v-for="bounce in bounces"
-              :key="bounce.id"
-              class="bounce-item"
-              :class="{ 'selected': selectedBounce?.id === bounce.id }"
-              @click="selectBounce(bounce)"
+          <div class="bounce-layout">
+            <div class="bounce-tree-container" style="width: 350px; height: 100%; overflow-y: auto;">
+            <div v-if="!groupedBounceData || Object.keys(groupedBounceData).length === 0" class="no-bounces">
+              No bounces available
+            </div>
+            <el-menu
+              v-else
+              :key="menuID"
+              :default-active="defaultActive || null"
+              class="bounce-menu"
+              @select="onSelectOnMenu"
             >
-              <div class="bounce-header">
-                <span class="bounce-name">{{ bounce.displayName || bounce.name }}</span>
+              <el-sub-menu
+                v-for="(year, yearIdx) in Object.keys(groupedBounceData).sort((a,b)=>Number(a)-Number(b))"
+                :key="yearIdx"
+                :index="yearIdx.toString()"
+              >
+                <template #title>
+                  <el-icon>
+                    <Folder />
+                  </el-icon>
+                  <span>{{ year }}</span>
+                </template>
+                <el-sub-menu
+                  v-for="(month, monthIdx) in Object.keys(groupedBounceData[year]).sort((a,b)=>Number(a)-Number(b))"
+                  :key="yearIdx.toString() + '.' + monthIdx.toString()"
+                  :index="yearIdx.toString() + '.' + monthIdx.toString()"
+                >
+                  <template #title>
+                    <el-icon>
+                      <Folder />
+                    </el-icon>
+                    <span>{{ getMonthName(month) + '-' + year }}</span>
+                  </template>
+                  <el-menu-item
+                    v-for="(bounce, bounceIdx) in groupedBounceData[year][month]"
+                    :key="bounceIdx"
+                    :index="yearIdx.toString() + '.' + monthIdx.toString() + '.' + bounceIdx.toString() + '.' + 'ACTUAL'"
+                  >
+                    <template #title>
+                      <el-icon>
+                        <Document />
+                      </el-icon>
+                      <div class="w-full">
+                        <el-tooltip
+                          class="box-item"
+                          :show-after="500"
+                          effect="dark"
+                          :content="'Date: ' + formatDate((bounce as any).date)"
+                        >
+                          <p class="break-all">{{ ((bounce as any).user ? (bounce as any).user + '-' : '') + (((bounce as any).displayName) || (bounce as any).name) }}</p>
+                        </el-tooltip>
               </div>
-              <div class="bounce-details">
-                <span class="bounce-date">{{ formatDate(bounce.date) }}</span>
-                <span class="bounce-user">User: {{ bounce.user }}</span>
+                    </template>
+                  </el-menu-item>
+                </el-sub-menu>
+              </el-sub-menu>
+            </el-menu>
               </div>
+            <div class="bounce-chart" style="height: 100%;">
+              <BounceChart
+                v-if="elements && elements.length"
+                :data="elements"
+                :selected-node="selectedNode"
+                :chart-key="chartKey"
+                @onClickTree="onGraphNodeClick"
+              />
+              <div v-else class="bounce-graph-empty">No timeline available</div>
             </div>
           </div>
         </div>
@@ -79,8 +142,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
+import 'element-plus/dist/index.css'
 import { portfolioService, type Portfolio, type Bounce } from '@/services/portfolioService'
+import BounceChart from '@/components/BounceChart.vue'
+import { Folder, Document } from '@element-plus/icons-vue'
+import { ElMenu, ElSubMenu, ElMenuItem, ElIcon, ElTooltip } from 'element-plus'
 
 const props = defineProps<{
   visible: boolean
@@ -100,8 +167,21 @@ const portfolios = ref<Portfolio[]>([])
 const bounces = ref<Bounce[]>([])
 const selectedPortfolio = ref<Portfolio | null>(null)
 const selectedBounce = ref<Bounce | null>(null)
+const selectedPortfolioId = ref<string>('')
+const isDropdownOpen = ref(false)
+const dropdownRef = ref<HTMLElement | null>(null)
 const draftList = ref<{ [portfolioId: string]: Bounce[] }>({})
 const bouncesSection = ref<HTMLElement | null>(null)
+const bounceGraph = ref<Bounce[]>([])
+// Vue Flow chart dependencies
+const elements = ref<any[]>([])
+const selectedNode = ref<number>(0)
+const chartKey = ref<number>(0)
+const treeSelected = ref<string>('')
+const selectedDraftList = ref<Record<string, any>>({})
+const groupedBounceData = ref<{ [year: string]: { [month: string]: Bounce[] } }>({})
+const menuID = ref(0)
+const defaultActive = ref()
 
 const errorModal = ref({
   visible: false,
@@ -120,18 +200,86 @@ const isVisible = computed({
 const onClose = () => {
   selectedPortfolio.value = null
   selectedBounce.value = null
+  selectedPortfolioId.value = ''
+  isDropdownOpen.value = false
+  groupedBounceData.value = {}
+  menuID.value = 0
+  defaultActive.value = null
   emit('close')
+}
+
+const toggleDropdown = () => {
+  isDropdownOpen.value = !isDropdownOpen.value
+  if (isDropdownOpen.value) {
+    nextTick(() => {
+      positionDropdown()
+    })
+  }
+}
+
+const positionDropdown = () => {
+  if (dropdownRef.value) {
+    const rect = dropdownRef.value.getBoundingClientRect()
+    const dropdownOptions = document.querySelector('.dropdown-options') as HTMLElement
+    if (dropdownOptions) {
+      dropdownOptions.style.top = `${rect.bottom + window.scrollY}px`
+      dropdownOptions.style.left = `${rect.left + window.scrollX}px`
+      dropdownOptions.style.width = `${rect.width}px`
+    }
+  }
+}
+
+const sortedPortfolios = computed(() => {
+  return [...portfolios.value].sort((a, b) => a.name.localeCompare(b.name))
+})
+
+const onPortfolioChange = async () => {
+  if (!selectedPortfolioId.value) {
+    selectedPortfolio.value = null
+    selectedBounce.value = null
+    bounces.value = []
+    return
+  }
+  
+  const portfolio = portfolios.value.find(p => p.id === selectedPortfolioId.value)
+  if (portfolio) {
+    await selectPortfolio(portfolio)
+  }
 }
 
 const selectPortfolio = async (portfolio: Portfolio) => {
   selectedPortfolio.value = portfolio
+  selectedPortfolioId.value = portfolio.id
   selectedBounce.value = null
+  isDropdownOpen.value = false
   
   try {
     isLoading.value = true
     const portfolioBounces = await portfolioService.getBouncesForPortfolio(portfolio.id, portfolios.value)
     bounces.value = portfolioBounces
-    
+    groupBouncesByDate(portfolioBounces)
+    bounceGraph.value = [...portfolioBounces].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    const nodes: any[] = []
+    const edges: any[] = []
+    let id = 0
+    const linked: Record<string, number> = {}
+    for (const b of bounceGraph.value) {
+      const yyyymm = b.date ? b.date.replace(/-/g, '').slice(0, 6) : ''
+      const ts: string = (b as any).timestamp || (b as any).time_stamp || (b as any).timeStamp || (b as any).created_at || (b as any).createdAt || (b as any).date || ''
+      const usr: string = (b as any).user || b.user || ''
+      const label: string = (b as any).displayName || (b as any).name || ''
+      nodes.push({ id: id.toString(), type: 'custom', position: { x: 0, y: 0 }, data: { name: `${yyyymm}-${ts}-${usr}-${label}` } })
+      linked[b.id] = id
+      id += 1
+    }
+    for (let i = 1; i < nodes.length; i++) {
+      edges.push({ id: `e${i-1}-${i}`, source: (i-1).toString(), target: i.toString(), type: 'step' })
+    }
+    elements.value = [...nodes, ...edges]
+    selectedNode.value = 0
+    treeSelected.value = ''
+    selectedDraftList.value = {}
+    chartKey.value += 1
     // Scroll to bounces section after data is loaded
     await nextTick()
     if (bouncesSection.value) {
@@ -149,6 +297,14 @@ const selectPortfolio = async (portfolio: Portfolio) => {
 
 const selectBounce = (bounce: Bounce) => {
   selectedBounce.value = bounce
+}
+
+const onGraphNodeClick = (nodeId: string) => {
+  const idx = Number(nodeId)
+  const b = bounceGraph.value[idx]
+  if (!b) return
+  selectedNode.value = idx
+  selectBounce(b as any)
 }
 
 const showErrorModal = (message: string) => {
@@ -308,8 +464,93 @@ watch(() => props.visible, (newVisible) => {
     }
     selectedPortfolio.value = null
     selectedBounce.value = null
+    selectedPortfolioId.value = ''
+    isDropdownOpen.value = false
   }
 })
+
+const handleClickOutside = (event: Event) => {
+  if (isDropdownOpen.value && !dropdownRef.value?.contains(event.target as Node)) {
+    isDropdownOpen.value = false
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
+
+function parseYearMonthFromString(input: string): { year: string; monthIndex: number } {
+  if (!input) return { year: 'Unknown', monthIndex: 0 }
+  let m = input.match(/^(\d{4})(\d{2})/)
+  if (m) return { year: m[1], monthIndex: Math.max(0, Math.min(11, parseInt(m[2]) - 1)) }
+  // YYYY-MM or YYYY-MM-DD
+  m = input.match(/^(\d{4})-(\d{2})/)
+  if (m) return { year: m[1], monthIndex: Math.max(0, Math.min(11, parseInt(m[2]) - 1)) }
+  // Fallback search
+  m = input.match(/(\d{4})(\d{2})/)
+  if (m) return { year: m[1], monthIndex: Math.max(0, Math.min(11, parseInt(m[2]) - 1)) }
+  const d = new Date(input)
+  if (!isNaN(d.getTime())) return { year: d.getFullYear().toString(), monthIndex: d.getMonth() }
+  return { year: 'Unknown', monthIndex: 0 }
+}
+
+const groupBouncesByDate = (bounces: Bounce[]) => {
+  const grouped: { [year: string]: { [monthIndex: number]: Bounce[] } } = {}
+  bounces.forEach((bounce: any) => {
+    const src = (bounce.date as string) || (bounce.name as string) || ''
+    const { year, monthIndex } = parseYearMonthFromString(src)
+    if (!grouped[year]) grouped[year] = {}
+    if (!grouped[year][monthIndex]) grouped[year][monthIndex] = []
+    grouped[year][monthIndex].push(bounce)
+  })
+  Object.keys(grouped).forEach(year => {
+    Object.keys(grouped[year]).forEach((mStr: any) => {
+      const m = Number(mStr)
+      grouped[year][m].sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    })
+  })
+  groupedBounceData.value = grouped
+  const yearsAsc = Object.keys(grouped).sort((a,b)=>Number(a)-Number(b))
+  const yearsDesc = [...yearsAsc].reverse()
+  if (yearsDesc.length > 0) {
+    const yearIdx = yearsAsc.indexOf(yearsDesc[0])
+    defaultActive.value = yearIdx.toString()
+  }
+  menuID.value += 1
+}
+
+const getMonthName = (monthIndex: string | number) => {
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  const idx = typeof monthIndex === 'string' ? parseInt(monthIndex) : monthIndex
+  return months[idx] || 'Unknown'
+}
+
+const onSelectOnMenu = (index: string) => {
+  const arr = index.split('.')
+  if (arr.length >= 4 && arr[3] === 'ACTUAL') {
+    const yearIdx = parseInt(arr[0])
+    const monthIdx = parseInt(arr[1])
+    const bounceIdx = parseInt(arr[2])
+  const years = Object.keys(groupedBounceData.value).sort((a,b)=>Number(a)-Number(b))
+    const year = years[yearIdx]
+  const months = Object.keys(groupedBounceData.value[year]).sort((a,b)=>Number(a)-Number(b))
+    const month = months[monthIdx]
+    const bounce = groupedBounceData.value[year][month][bounceIdx]
+    if (bounce) {
+      selectBounce(bounce)
+      // Update selection in graph
+      const idx = bounceGraph.value.findIndex(b => b.id === bounce.id)
+      if (idx >= 0) {
+        selectedNode.value = idx
+        chartKey.value += 1
+      }
+    }
+  }
+}
 </script>
 
 <style scoped>
@@ -321,21 +562,22 @@ watch(() => props.visible, (newVisible) => {
   bottom: 0;
   background: rgba(0, 0, 0, 0.5);
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
-  padding-top: 0vh;
+  padding: 0;
   z-index: 1000;
 }
 
 .modal-container {
   background: white;
-  border-radius: 12px;
-  width: 85%;
-  max-width: 650px;
-  max-height: 75vh;
-  overflow: hidden;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  margin-top: -50px;
+  border-radius: 0;
+  width: 100vw;
+  max-width: 100vw;
+  height: 100vh;
+  max-height: 100vh;
+  overflow: visible;
+  box-shadow: none;
+  margin-top: 0;
 }
 
 .modal-header {
@@ -371,8 +613,11 @@ watch(() => props.visible, (newVisible) => {
 
 .modal-content {
   padding: 20px;
-  max-height: 50vh;
+  height: calc(100vh - 160px);
   overflow-y: auto;
+  overflow-x: visible;
+  display: flex;
+  flex-direction: column;
 }
 
 .selection-section {
@@ -382,6 +627,108 @@ watch(() => props.visible, (newVisible) => {
   margin-bottom: 24px;
 }
 
+.bounce-layout {
+  display: flex;
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
+}
+
+.bounce-chart {
+  flex: 1;
+  min-height: 420px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f8fafc;
+  position: relative;
+  padding: 0;
+  overflow: hidden;
+}
+
+.bounce-graph {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.graph-node {
+  width: 300px;
+  background: #8ea1bf;
+  color: #fff;
+  border-radius: 6px;
+  padding: 18px 16px 14px 16px;
+  box-shadow: 0 6px 10px rgba(0,0,0,0.18);
+  cursor: pointer;
+}
+
+.graph-node.selected {
+  outline: 3px solid #55B691;
+}
+
+.graph-node-header {
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+.graph-node-value {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.graph-node-info {
+  position: absolute;
+  right: 16px;
+  top: 12px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.9);
+  color: #7aa596;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.graph-node-body {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  row-gap: 6px;
+  column-gap: 12px;
+}
+
+.kv .k {
+  opacity: 0.9;
+  font-size: 12px;
+}
+.kv .v {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.graph-node-ellipsis {
+  position: absolute;
+  right: 16px;
+  bottom: 10px;
+  letter-spacing: 2px;
+}
+
+.graph-connector {
+  width: 2px;
+  height: 32px;
+  background: #cbd5e1;
+}
+
+.bounce-graph-empty {
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
 .section-title {
   font-size: 16px;
   font-weight: 600;
@@ -389,78 +736,119 @@ watch(() => props.visible, (newVisible) => {
   margin: 0;
 }
 
-.portfolio-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 12px;
+.portfolio-dropdown-container {
+  width: 100%;
+  position: relative;
+  z-index: 2000;
 }
 
-.portfolio-card {
-  padding: 16px;
+.custom-dropdown {
+  position: relative;
+  width: 100%;
+}
+
+.dropdown-selected {
+  width: 100%;
+  padding: 12px 16px;
   border: 2px solid #e5e7eb;
   border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1f2937;
+  background: white;
   cursor: pointer;
   transition: all 0.2s ease;
-  background: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.portfolio-card:hover {
+.dropdown-selected:hover {
   border-color: #55B691;
   box-shadow: 0 2px 8px rgba(85, 182, 145, 0.1);
 }
 
-.portfolio-card.selected {
-  border-color: #55B691;
-  background: #EEF4F8;
+.dropdown-arrow {
+  font-size: 12px;
+  color: #6b7280;
+  transition: transform 0.2s ease;
 }
 
-.portfolio-name {
-  font-size: 14px;
-  font-weight: 600;
-  color: #1f2937;
+.custom-dropdown.open .dropdown-arrow {
+  transform: rotate(180deg);
 }
 
-.bounce-tree {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  max-height: 200px;
+.dropdown-options {
+  position: fixed;
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  max-height: 220px;
   overflow-y: auto;
+  z-index: 3000;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+  min-width: 300px;
 }
 
-.bounce-item {
-  padding: 12px;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
+.dropdown-option {
+  padding: 12px 16px;
+  font-size: 14px;
+  color: #1f2937;
   cursor: pointer;
   transition: all 0.2s ease;
-  background: white;
+  border-bottom: 1px solid #f3f4f6;
 }
 
-.bounce-item:hover {
-  border-color: #55B691;
-  box-shadow: 0 1px 4px rgba(85, 182, 145, 0.1);
+.dropdown-option:last-child {
+  border-bottom: none;
 }
 
-.bounce-item.selected {
-  border-color: #55B691;
+.dropdown-option:hover {
+  background: #f8fafc;
+  color: #55B691;
+}
+
+.dropdown-option.selected {
   background: #EEF4F8;
+  color: #55B691;
+  font-weight: 600;
+}
+
+.bounce-tree-container {
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  background: white;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.bounce-menu {
+  overflow: auto;
+  height: 100%;
+  width: 100%;
+}
+
+.no-bounces {
+  padding: 20px;
+  text-align: center;
+  color: #6b7280;
+  font-style: italic;
 }
 
 .bounce-header {
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 
 .bounce-name {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
-  color: #1f2937;
+  color: inherit;
 }
 
 .bounce-details {
   display: flex;
   gap: 12px;
-  font-size: 11px;
+  font-size: 12px;
   color: #6b7280;
 }
 
@@ -470,6 +858,7 @@ watch(() => props.visible, (newVisible) => {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
+  flex-shrink: 0;
 }
 
 .cancel-btn,
@@ -515,32 +904,56 @@ watch(() => props.visible, (newVisible) => {
 
 /* Custom Scrollbar Styling */
 .modal-content::-webkit-scrollbar,
-.bounce-tree::-webkit-scrollbar {
-  width: 12px;
+.bounce-tree::-webkit-scrollbar,
+.dropdown-options::-webkit-scrollbar {
+  width: 24px;
 }
 
 .modal-content::-webkit-scrollbar-track,
-.bounce-tree::-webkit-scrollbar-track {
+.bounce-tree::-webkit-scrollbar-track,
+.dropdown-options::-webkit-scrollbar-track {
   background: #f1f5f9;
-  border-radius: 6px;
+  border-radius: 12px;
+  margin: 12px 0;
+  border: 2px solid transparent;
+  background-clip: content-box;
 }
 
 .modal-content::-webkit-scrollbar-thumb,
-.bounce-tree::-webkit-scrollbar-thumb {
+.bounce-tree::-webkit-scrollbar-thumb,
+.dropdown-options::-webkit-scrollbar-thumb {
   background: #cbd5e1;
-  border-radius: 6px;
-  border: 2px solid #f1f5f9;
+  border-radius: 12px;
+  border: 4px solid #f1f5f9;
+  min-height: 50px;
+  background-clip: content-box;
 }
 
 .modal-content::-webkit-scrollbar-thumb:hover,
-.bounce-tree::-webkit-scrollbar-thumb:hover {
+.bounce-tree::-webkit-scrollbar-thumb:hover,
+.dropdown-options::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
+  border: 4px solid #f1f5f9;
+}
+
+.modal-content::-webkit-scrollbar-thumb:active,
+.bounce-tree::-webkit-scrollbar-thumb:active,
+.dropdown-options::-webkit-scrollbar-thumb:active {
+  background: #64748b;
+  border: 4px solid #f1f5f9;
+}
+
+.modal-content::-webkit-scrollbar-corner,
+.bounce-tree::-webkit-scrollbar-corner,
+.dropdown-options::-webkit-scrollbar-corner {
+  background: #f1f5f9;
 }
 
 /* Firefox scrollbar styling */
 .modal-content,
-.bounce-tree {
-  scrollbar-width: thick;
+.bounce-tree,
+.dropdown-options {
+  scrollbar-width: auto;
   scrollbar-color: #cbd5e1 #f1f5f9;
 }
 
