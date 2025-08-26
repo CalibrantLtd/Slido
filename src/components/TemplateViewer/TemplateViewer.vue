@@ -605,8 +605,8 @@ const captureSlideImages = async (slides: any[]): Promise<string[]> => {
         }
         
         const htmlToImage = await import('html-to-image')
-        const dataUrl = await htmlToImage.toPng(slideElement as HTMLElement, {
-          quality: 0.8,
+        const dataUrl = await htmlToImage.toSvg(slideElement as HTMLElement, {
+          quality: 1.0,
           backgroundColor: '#ffffff',
           width: 960,
           height: 540
@@ -731,14 +731,9 @@ const onWizardFinish = async (wizardData: any) => {
     isWizardModalVisible.value = false
     currentWizardData.value = null
     
-    globalStore.setLoading(true)
-    try {
-      await exportTemplateWithRealData()
-    } catch (error) {
-      console.error('Error exporting template:', error)
-    } finally {
-      globalStore.setLoading(false)
-    }
+    // In template viewer context, we don't export the template with real data
+    // The template should remain as mock placeholders
+    // Real data will be applied when creating presentations or reports
   }
 }
 

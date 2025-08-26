@@ -254,6 +254,16 @@ const selectPortfolio = async (portfolio: Portfolio) => {
   selectedBounce.value = null
   isDropdownOpen.value = false
   
+  // Clear existing bounce data immediately
+  bounces.value = []
+  groupedBounceData.value = {}
+  bounceGraph.value = []
+  elements.value = []
+  selectedNode.value = 0
+  treeSelected.value = ''
+  selectedDraftList.value = {}
+  chartKey.value += 1
+  
   try {
     isLoading.value = true
     const portfolioBounces = await portfolioService.getBouncesForPortfolio(portfolio.id, portfolios.value)
@@ -277,10 +287,6 @@ const selectPortfolio = async (portfolio: Portfolio) => {
       edges.push({ id: `e${i-1}-${i}`, source: (i-1).toString(), target: i.toString(), type: 'step' })
     }
     elements.value = [...nodes, ...edges]
-    selectedNode.value = 0
-    treeSelected.value = ''
-    selectedDraftList.value = {}
-    chartKey.value += 1
     // Scroll to bounces section after data is loaded
     await nextTick()
     if (bouncesSection.value) {

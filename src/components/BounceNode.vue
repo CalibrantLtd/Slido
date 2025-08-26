@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { InfoFilled, More } from '@element-plus/icons-vue'
+import { ElTooltip } from 'element-plus'
 
 const props = defineProps<{ data: any; treeSelected?: string; selectedDraftList?: Record<string, any>; selected?: boolean }>()
 
