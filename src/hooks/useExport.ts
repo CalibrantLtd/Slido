@@ -238,7 +238,7 @@ export default () => {
 
   // Format SVG path information to the format required by pptxgenjs
   const formatPoints = (points: SvgPoints, scale = { x: 1, y: 1 }): Points => {
-    return points.map(point => {
+    return points.map((point: any) => {
       if (point.close !== undefined) {
         return { close: true }
       }
@@ -389,6 +389,38 @@ export default () => {
     })
   }
 
+  const capturePerformanceChart = async (elementId: string, width: number, height: number) => {
+    let element = document.querySelector(`.performance-chart-element[data-element-id="${elementId}"] #chartdiv`) as HTMLElement
+    
+    if (element) {
+      return await toPng(element, {
+        quality: 1.0,
+        width,
+        height,
+        fontEmbedCSS: '',
+      })
+    }
+    
+    element = document.querySelector(`.performance-chart-element[data-element-id="${elementId}"] .chart-image`) as HTMLElement
+    
+    if (element) {
+      const style = window.getComputedStyle(element)
+      const backgroundImage = style.backgroundImage
+      
+      if (backgroundImage && backgroundImage.includes('data:image')) {
+        const { toSvg } = await import('html-to-image')
+        return await toSvg(element, {
+          quality: 1.0,
+          width,
+          height,
+          fontEmbedCSS: '',
+        })
+      }
+    }
+    
+    return null
+  }
+
   // Export PPTX file
   const exportPPTX = async (_slides: Slide[], masterOverwrite: boolean, ignoreMedia: boolean) => {
     exporting.value = true
@@ -447,9 +479,9 @@ export default () => {
       )
 
       for (const el of slide.elements) {
-        if (el?.visible === false) continue
+        if ((el as any)?.visible === false) continue
         // Skip dashboard table placeholders
-        if (el?.type === 'dashboard-table' && el?.isTemplatePlaceholder) continue
+        if (el?.type === 'dashboard-table' && (el as any)?.isTemplatePlaceholder) continue
         // Skip mock table image if a real dashboard table exists on this slide
         if (el?.type === 'image' && el?.src?.includes('MockTable.svg') && hasRealDashboardTableOnSlide) continue
         if (el.type === 'text') {
@@ -638,23 +670,24 @@ export default () => {
         }
 
         else if (el.type === 'chart') {
-          const chartData = []
-          for (let i = 0; i < el.data.series.length; i++) {
-            const item = el.data.series[i]
+          const chartData: any[] = []
+          for (let i = 0; i < (el as any).data.series.length; i++) {
+            const item = (el as any).data.series[i]
             chartData.push({
               name: `Series ${i + 1}`,
-              labels: el.data.labels,
+              labels: (el as any).data.labels,
               values: item,
             })
           }
 
           let chartColors: string[] = []
-          if (el.themeColors.length === 10) chartColors = el.themeColors.map(color => formatColor(color).color)
-          else if (el.themeColors.length === 1) chartColors = tinycolor(el.themeColors[0]).analogous(10).map(color => formatColor(color.toHexString()).color)
+          const elAny = el as any
+          if (elAny.themeColors.length === 10) chartColors = elAny.themeColors.map((color: string) => formatColor(color).color)
+          else if (elAny.themeColors.length === 1) chartColors = tinycolor(elAny.themeColors[0]).analogous(10).map((color: any) => formatColor(color.toHexString()).color)
           else {
-            const len = el.themeColors.length
-            const supplement = tinycolor(el.themeColors[len - 1]).analogous(10 + 1 - len).map(color => color.toHexString())
-            chartColors = [...el.themeColors.slice(0, len - 1), ...supplement].map(color => formatColor(color).color)
+            const len = elAny.themeColors.length
+            const supplement = tinycolor(elAny.themeColors[len - 1]).analogous(10 + 1 - len).map((color: any) => color.toHexString())
+            chartColors = [...elAny.themeColors.slice(0, len - 1), ...supplement].map((color: string) => formatColor(color).color)
           }
           
           const options: pptxgen.IChartOpts = {
@@ -662,10 +695,10 @@ export default () => {
             y: el.top / ratioPx2Inch.value,
             w: el.width / ratioPx2Inch.value,
             h: el.height / ratioPx2Inch.value,
-            chartColors: (el.chartType === 'pie' || el.chartType === 'ring') ? chartColors : chartColors.slice(0, el.data.series.length),
+            chartColors: (elAny.chartType === 'pie' || elAny.chartType === 'ring') ? chartColors : chartColors.slice(0, elAny.data.series.length),
           }
 
-          const textColor = formatColor(el.textColor || '#000000').color
+          const textColor = formatColor(elAny.textColor || '#000000').color
           options.catAxisLabelColor = textColor
           options.valAxisLabelColor = textColor
 
@@ -673,21 +706,21 @@ export default () => {
           options.catAxisLabelFontSize = fontSize
           options.valAxisLabelFontSize = fontSize
           
-          if (el.fill || el.outline) {
+          if (elAny.fill || elAny.outline) {
             const plotArea: pptxgen.IChartPropsFillLine = {}
-            if (el.fill) {
-              plotArea.fill = { color: formatColor(el.fill).color }
+            if (elAny.fill) {
+              plotArea.fill = { color: formatColor(elAny.fill).color }
             }
-            if (el.outline) {
+            if (elAny.outline) {
               plotArea.border = {
-                pt: el.outline.width! / ratioPx2Pt.value,
-                color: formatColor(el.outline.color!).color,
+                pt: elAny.outline.width! / ratioPx2Pt.value,
+                color: formatColor(elAny.outline.color!).color,
               }
             }
             options.plotArea = plotArea
           }
 
-          if ((el.data.series.length > 1 && el.chartType !== 'scatter') || el.chartType === 'pie' || el.chartType === 'ring') {
+          if ((elAny.data.series.length > 1 && elAny.chartType !== 'scatter') || elAny.chartType === 'pie' || elAny.chartType === 'ring') {
             options.showLegend = true
             options.legendPos = 'b'
             options.legendColor = textColor
@@ -695,34 +728,34 @@ export default () => {
           }
 
           let type = pptx.ChartType.bar
-          if (el.chartType === 'bar') {
+          if (elAny.chartType === 'bar') {
             type = pptx.ChartType.bar
             options.barDir = 'col'
-            if (el.options?.stack) options.barGrouping = 'stacked'
+            if (elAny.options?.stack) options.barGrouping = 'stacked'
           }
-          else if (el.chartType === 'column') {
+          else if (elAny.chartType === 'column') {
             type = pptx.ChartType.bar
             options.barDir = 'bar'
-            if (el.options?.stack) options.barGrouping = 'stacked'
+            if (elAny.options?.stack) options.barGrouping = 'stacked'
           }
-          else if (el.chartType === 'line') {
+          else if (elAny.chartType === 'line') {
             type = pptx.ChartType.line
-            if (el.options?.lineSmooth) options.lineSmooth = true
+            if (elAny.options?.lineSmooth) options.lineSmooth = true
           }
-          else if (el.chartType === 'area') {
+          else if (elAny.chartType === 'area') {
             type = pptx.ChartType.area
           }
-          else if (el.chartType === 'radar') {
+          else if (elAny.chartType === 'radar') {
             type = pptx.ChartType.radar
           }
-          else if (el.chartType === 'scatter') {
+          else if (elAny.chartType === 'scatter') {
             type = pptx.ChartType.scatter
             options.lineSize = 0
           }
-          else if (el.chartType === 'pie') {
+          else if (elAny.chartType === 'pie') {
             type = pptx.ChartType.pie
           }
-          else if (el.chartType === 'ring') {
+          else if (elAny.chartType === 'ring') {
             type = pptx.ChartType.doughnut
             options.holeSize = 60
           }
@@ -731,9 +764,10 @@ export default () => {
         }
 
         else if (el.type === 'table') {
-          const hiddenCells = []
-          for (let i = 0; i < el.data.length; i++) {
-            const rowData = el.data[i]
+          const elAny = el as any
+          const hiddenCells: string[] = []
+          for (let i = 0; i < elAny.data.length; i++) {
+            const rowData = elAny.data[i]
 
             for (let j = 0; j < rowData.length; j++) {
               const cell = rowData[j]
@@ -745,9 +779,9 @@ export default () => {
             }
           }
 
-          const tableData = []
+          const tableData: any[] = []
 
-          const theme = el.theme
+          const theme = elAny.theme
           let themeColor: FormatColor | null = null
           let subThemeColors: FormatColor[] = []
           if (theme) {
@@ -755,9 +789,9 @@ export default () => {
             subThemeColors = getTableSubThemeColor(theme.color).map(item => formatColor(item))
           }
 
-          for (let i = 0; i < el.data.length; i++) {
-            const row = el.data[i]
-            const _row = []
+          for (let i = 0; i < elAny.data.length; i++) {
+            const row = elAny.data[i]
+            const _row: any[] = []
 
             for (let j = 0; j < row.length; j++) {
               const cell = row[j]
@@ -778,7 +812,7 @@ export default () => {
                 else c = subThemeColors[0]
 
                 if (theme.rowHeader && i === 0) c = themeColor
-                else if (theme.rowFooter && i === el.data.length - 1) c = themeColor
+                else if (theme.rowFooter && i === elAny.data.length - 1) c = themeColor
                 else if (theme.colHeader && j === 0) c = themeColor
                 else if (theme.colFooter && j === row.length - 1) c = themeColor
 
@@ -805,14 +839,14 @@ export default () => {
             y: el.top / ratioPx2Inch.value,
             w: el.width / ratioPx2Inch.value,
             h: el.height / ratioPx2Inch.value,
-            colW: el.colWidths.map(item => el.width * item / ratioPx2Inch.value),
+            colW: elAny.colWidths.map((item: number) => el.width * item / ratioPx2Inch.value),
           }
-          if (el.theme) options.fill = { color: '#ffffff' }
-          if (el.outline.width && el.outline.color) {
+          if (elAny.theme) options.fill = { color: '#ffffff' }
+          if (elAny.outline.width && elAny.outline.color) {
             options.border = {
-              type: el.outline.style === 'solid' ? 'solid' : 'dash',
-              pt: el.outline.width / ratioPx2Pt.value,
-              color: formatColor(el.outline.color).color,
+              type: elAny.outline.style === 'solid' ? 'solid' : 'dash',
+              pt: elAny.outline.width / ratioPx2Pt.value,
+              color: formatColor(elAny.outline.color).color,
             }
           }
 
@@ -883,35 +917,24 @@ export default () => {
         }
 
         else if (el.type === 'performance-chart') {
-          const chartElement = document.querySelector(`[data-element-id="${el.id}"] #chartdiv`) as HTMLElement
+          const capturedImage = await capturePerformanceChart(el.id, el.width, el.height)
           
-          if (chartElement) {
-            try {
-              const capturedImage = await toPng(chartElement, {
-                quality: 1.0,
-                width: el.width,
-                height: el.height,
-                fontEmbedCSS: '',
-              })
-              
-              const options: pptxgen.ImageProps = {
-                data: capturedImage,
-                x: el.left / ratioPx2Inch.value,
-                y: el.top / ratioPx2Inch.value,
-                w: el.width / ratioPx2Inch.value,
-                h: el.height / ratioPx2Inch.value,
-              }
-              
-              if (el.rotate) options.rotate = el.rotate
-              if (el.link) {
-                const linkOption = getLinkOption(el.link)
-                if (linkOption) options.hyperlink = linkOption
-              }
-              
-              pptxSlide.addImage(options)
-            } catch (error) {
-              console.error(`Failed to capture performance chart for element ${el.id}:`, error)
+          if (capturedImage) {
+            const options: pptxgen.ImageProps = {
+              data: capturedImage,
+              x: el.left / ratioPx2Inch.value,
+              y: el.top / ratioPx2Inch.value,
+              w: el.width / ratioPx2Inch.value,
+              h: el.height / ratioPx2Inch.value,
             }
+            
+            if (el.rotate) options.rotate = el.rotate
+            if (el.link) {
+              const linkOption = getLinkOption(el.link)
+              if (linkOption) options.hyperlink = linkOption
+            }
+            
+            pptxSlide.addImage(options)
           }
         }
       }
@@ -932,5 +955,6 @@ export default () => {
     exportSpecificFile,
     exportPPTX,
     captureDashboardTable,
+    capturePerformanceChart,
   }
 }

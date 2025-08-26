@@ -291,6 +291,28 @@ const generateChartImagesFromEditor = async (slides: any[]): Promise<Record<stri
               console.error(`Failed to capture chart for element ${element.id}:`, error)
             }
           } else {
+            const staticChartElement = document.querySelector(`[data-element-id="${element.id}"] .chart-image`) as HTMLElement
+            
+            if (staticChartElement) {
+              const style = window.getComputedStyle(staticChartElement)
+              const backgroundImage = style.backgroundImage
+              
+              if (backgroundImage && backgroundImage.includes('data:image')) {
+                try {
+                  const htmlToImage = await import('html-to-image')
+                  const dataUrl = await htmlToImage.toSvg(staticChartElement, {
+                    quality: 1.0,
+                    backgroundColor: '#ffffff',
+                    pixelRatio: 2,
+                    skipFonts: false
+                  })
+                  
+                  chartImages[element.id] = dataUrl
+                } catch (error) {
+                  console.error(`Failed to capture static chart for element ${element.id}:`, error)
+                }
+              }
+            }
           }
         }
       }
@@ -309,109 +331,38 @@ const generateChartImagesFromEditor = async (slides: any[]): Promise<Record<stri
 
 const generatePPTDataFromEditor = async (slides: any[]): Promise<ArrayBuffer> => {
   try {
-    const pptxgen = (await import('pptxgenjs')).default
-    const { saveAs } = await import('file-saver')
+    const useExport = await import('@/hooks/useExport')
+    const { exportPPTX } = useExport.default()
     
-    const originalSlides = slidesStore.slides
-    const originalSlideIndex = slidesStore.slideIndex
-    
-    try {
-      slidesStore.setSlides(slides)
-      
-      const pptx = new pptxgen()
-      pptx.layout = 'LAYOUT_16x9'
-      
-      for (const slide of slides) {
-        const pptxSlide = pptx.addSlide()
+    return new Promise(async (resolve, reject) => {
+      try {
+        const pptxgen = await import('pptxgenjs')
         
-        if (slide.background?.type === 'solid') {
-          pptxSlide.background = { color: slide.background.color }
-        }
+        const originalWriteFile = pptxgen.default.prototype.writeFile
         
-        if (slide.elements) {
-          for (const element of slide.elements) {
-            if (element.visible === false) continue
-            
-            if (element.type === 'text') {
-              pptxSlide.addText([{
-                text: element.content || '',
-                options: {
-                  x: element.left / 96,
-                  y: element.top / 96,
-                  w: element.width / 96,
-                  h: element.height / 96,
-                  fontSize: (element.fontSize || 16) / 72 * 96,
-                  color: element.color || '#000000',
-                  fontFace: element.fontFamily || 'Arial'
-                }
-              }])
-            } else if (element.type === 'image') {
-              pptxSlide.addImage({
-                data: element.src,
-                x: element.left / 96,
-                y: element.top / 96,
-                w: element.width / 96,
-                h: element.height / 96
-              })
-            } else if (element.type === 'dashboard-table') {
-              const tableElement = document.querySelector(`[data-element-id="${element.id}"] .table-panel`) as HTMLElement
-              if (tableElement) {
-                const { toPng } = await import('html-to-image')
-                const tableImage = await toPng(tableElement, {
-                  quality: 1.0,
-                  width: element.width,
-                  height: element.height
-                })
-                
-                pptxSlide.addImage({
-                  data: tableImage,
-                  x: element.left / 96,
-                  y: element.top / 96,
-                  w: element.width / 96,
-                  h: element.height / 96
-                })
-              }
-            } else if (element.type === 'performance-chart') {
-              const chartElement = document.querySelector(`[data-element-id="${element.id}"] #chartdiv`) as HTMLElement
-              
-              if (chartElement) {
-                // Check if chart has content
-                const hasContent = chartElement.querySelector('canvas') || chartElement.querySelector('svg') || chartElement.children.length > 0
-                
-                try {
-                  const { toPng } = await import('html-to-image')
-                  const chartImage = await toPng(chartElement, {
-                    quality: 1.0,
-                    width: element.width,
-                    height: element.height
-                  })
-                  
-                  
-                  pptxSlide.addImage({
-                    data: chartImage,
-                    x: element.left / 96,
-                    y: element.top / 96,
-                    w: element.width / 96,
-                    h: element.height / 96
-                  })
-                  
-                } catch (error) {
-                  console.error(`PPT Generation: Failed to capture chart for element ${element.id}:`, error)
-                }
-              } else {
-              }
-            }
+        pptxgen.default.prototype.writeFile = async function(options: any): Promise<string> {
+          try {
+            const buffer = await this.write({ outputType: 'arraybuffer' }) as ArrayBuffer
+            resolve(buffer)
+            return ''
+          } catch (error) {
+            console.error('Error creating arraybuffer:', error)
+            reject(error)
+            return ''
           }
         }
+        
+        await exportPPTX(slides, false, false)
+        
+        setTimeout(() => {
+          pptxgen.default.prototype.writeFile = originalWriteFile
+        }, 500)
+        
+      } catch (error) {
+        console.error('Error in generatePPTDataFromEditor:', error)
+        reject(error)
       }
-      
-      const pptxBuffer = await pptx.write({ outputType: 'arraybuffer' }) as ArrayBuffer
-      return pptxBuffer
-      
-    } finally {
-      slidesStore.setSlides(originalSlides)
-      slidesStore.updateSlideIndex(originalSlideIndex)
-    }
+    })
     
   } catch (error) {
     throw error
