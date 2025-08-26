@@ -41,8 +41,8 @@
               <div 
                 class="slide-content"
                 :style="{
-                  width: '960px',
-                  height: '580px',
+                  width: '1000px',
+                  height: '562.5px',
                   position: 'relative',
                   ...getSlideBackgroundStyle(currentSlide.background)
                 }"
@@ -160,17 +160,25 @@
 
     <div 
       v-if="mountAllTablesForExport"
-      style="position: absolute; left: -10000px; top: -10000px; width: 0; height: 0; overflow: hidden;"
+      style="position: absolute; left: -10000px; top: -10000px; width: 1000px; height: 562.5px; overflow: visible;"
     >
-      <div v-for="(slide, sIdx) in slides" :key="slide.id || sIdx">
-        <template v-for="(el, eIdx) in slide.elements || []" :key="el.id || eIdx">
-          <DashboardTableElement
-            v-if="el.type === 'dashboard-table'"
-            :elementInfo="el"
-            :selectElement="() => {}"
-            :contextmenus="() => null"
-          />
-        </template>
+      <div 
+        v-for="(slide, sIdx) in slides" 
+        :key="slide.id || sIdx"
+        :data-slide-id="slide.id"
+        style="position: absolute; width: 1000px; height: 562.5px;"
+        :style="{
+          ...getSlideBackgroundStyle(slide.background)
+        }"
+      >
+        <component
+          v-for="(element, index) in slide.elements || []"
+          :key="element.id || index"
+          :is="getElementComponent(element.type)"
+          :elementInfo="element"
+          :selectElement="() => {}"
+          :contextmenus="() => null"
+        />
       </div>
     </div>
   </div>
@@ -223,25 +231,21 @@ const selectedPortfolio = ref<any>(null)
 const selectedBounce = ref<any>(null)
 const portfoliosData = ref<any>(null)
 
-// Wizard modal state
 const isWizardModalVisible = ref(false)
 const currentWizardData = ref<any>(null)
 const wizardQueue = ref<any[]>([])
 const currentWizardIndex = ref(0)
 const hasProcessedTables = ref(false)
 
-// No tables modal state
 const noTablesModal = ref({
   visible: false
 })
 
-// Error modal state
 const errorModal = ref({
   visible: false,
   message: ''
 })
 
-// Success modal state
 const successModal = ref({
   visible: false,
   message: ''
@@ -250,8 +254,8 @@ const successModal = ref({
 const slideWidth = 720
 const slideHeight = 405
 
-const scaleX = slideWidth / 960  
-const scaleY = slideHeight / 580 
+const scaleX = slideWidth / 1000  
+const scaleY = slideHeight / 562.5 
 
 const currentSlide = computed(() => {
   return slides.value[currentSlideIndex.value] || { elements: [] }
@@ -259,16 +263,12 @@ const currentSlide = computed(() => {
 
 const mountAllTablesForExport = ref(false)
 
-// Get slide background style using the same logic as the editor
 const getSlideBackgroundStyle = (background: any) => {
   if (!background) return { backgroundColor: '#fff' }
 
   const { type, color, image, gradient } = background
 
-  // Solid color background
   if (type === 'solid') return { backgroundColor: color }
-
-  // Image background mode
   else if (type === 'image' && image) {
     const { src, size } = image
     if (!src) return { backgroundColor: '#fff' }
@@ -287,8 +287,6 @@ const getSlideBackgroundStyle = (background: any) => {
       backgroundPosition: 'center'
     }
   }
-
-  // Gradient background
   else if (type === 'gradient' && gradient) {
     const { type: gradientType, colors, rotate } = gradient
     const list = colors.map(item => `${item.color} ${item.pos}%`)
@@ -355,7 +353,6 @@ const onPortfolioModalClose = () => {
   isPortfolioModalVisible.value = false
 }
 
-// No tables modal functions
 const showNoTablesModal = () => {
   noTablesModal.value.visible = true
 }
@@ -364,7 +361,6 @@ const closeNoTablesModal = () => {
   noTablesModal.value.visible = false
 }
 
-// Error modal functions
 const showErrorModal = (message: string) => {
   errorModal.value.message = message
   errorModal.value.visible = true
@@ -374,12 +370,10 @@ const closeErrorModal = () => {
   errorModal.value.visible = false
 }
 
-// Success modal functions
 const showSuccessModal = (message: string) => {
   successModal.value.message = message
   successModal.value.visible = true
   
-  // Auto-dismiss after 4 seconds
   setTimeout(() => {
     successModal.value.visible = false
   }, 4000)
@@ -440,7 +434,6 @@ const scanTemplateForMockDashboardTables = async () => {
 }
 
 const showDashboardWizardForMockTables = async (mockTables: any[], portfolio: any, bounce: any) => {
-  // Create all wizard instances first
   const wizardPromises = mockTables.map((mockTable) => {
     const wizardInstance = {
       portfolio,
@@ -454,7 +447,6 @@ const showDashboardWizardForMockTables = async (mockTables: any[], portfolio: an
     })
   })
   
-  // Wait for all wizards to complete
   await Promise.all(wizardPromises)
 }
 
@@ -496,7 +488,8 @@ const exportTemplateWithRealData = async () => {
       bounceId: selectedBounce.value?.id || '',
       bounceName: selectedBounce.value?.displayName || selectedBounce.value?.name || '',
       pptData: pptBlob,
-      slideImages: slideImages
+      slideImages: slideImages,
+      slides: JSON.parse(JSON.stringify(slides.value))
     })
     
     restoreMockTables()
@@ -576,42 +569,60 @@ const captureSlideImages = async (slides: any[]): Promise<string[]> => {
   try {
     const slideImages: string[] = []
     
-    const originalSlideIndex = currentSlideIndex.value
+    mountAllTablesForExport.value = true
+    await nextTick()
+    await new Promise(resolve => setTimeout(resolve, 300))
     
-    for (let i = 0; i < slides.length; i++) {
-      const slide = slides[i]
+    try {
+      const hiddenContainer = document.querySelector('[style*="left: -10000px"]')
+      if (!hiddenContainer) {
+        console.error('Hidden container not found')
+        return slides.map((_, index) => createPlaceholderSlideImage(index + 1))
+      }
+      
+      const originalStyle = hiddenContainer.getAttribute('style')
+      hiddenContainer.setAttribute('style', 'position: absolute; left: 0px; top: 0px; width: 1000px; height: 562.5px; overflow: visible;')
       
       try {
-        currentSlideIndex.value = i
-        
-        await new Promise(resolve => setTimeout(resolve, 500))
-        
-        const slideElement = document.querySelector('.slide-content')
-        
-        if (!slideElement) {
-          slideImages.push(createPlaceholderSlideImage(i + 1))
-          continue
+        for (let i = 0; i < slides.length; i++) {
+          const slide = slides[i]
+          
+          try {
+            const slideElement = hiddenContainer.querySelector(`[data-slide-id="${slide.id}"]`) as HTMLElement
+            if (!slideElement) {
+              console.error(`Slide element not found for slide ${i + 1}`)
+              slideImages.push(createPlaceholderSlideImage(i + 1))
+              continue
+            }
+            
+            await new Promise(resolve => setTimeout(resolve, 200))
+            
+            const htmlToImage = await import('html-to-image')
+            const dataUrl = await htmlToImage.toSvg(slideElement, {
+              quality: 1.0,
+              backgroundColor: '#ffffff',
+              width: 1000,
+              height: 562.5,
+              pixelRatio: 2,
+              skipFonts: false
+            })
+            
+            slideImages.push(dataUrl)
+            
+          } catch (error) {
+            console.error(`Error capturing slide ${i + 1}:`, error)
+            slideImages.push(createPlaceholderSlideImage(i + 1))
+          }
         }
-        
-        const htmlToImage = await import('html-to-image')
-        const dataUrl = await htmlToImage.toSvg(slideElement as HTMLElement, {
-          quality: 1.0,
-          backgroundColor: '#ffffff',
-          width: 960,
-          height: 540
-        })
-        
-        slideImages.push(dataUrl)
-        
-      } catch (error) {
-        console.error(`Error capturing slide ${i + 1}:`, error)
-        slideImages.push(createPlaceholderSlideImage(i + 1))
+      } finally {
+        hiddenContainer.setAttribute('style', originalStyle || '')
       }
+      
+      return slideImages
+      
+    } finally {
+      mountAllTablesForExport.value = false
     }
-    
-    currentSlideIndex.value = originalSlideIndex
-    
-    return slideImages
     
   } catch (error) {
     console.error('Error capturing slide images:', error)
@@ -621,9 +632,9 @@ const captureSlideImages = async (slides: any[]): Promise<string[]> => {
 
 const createPlaceholderSlideImage = (slideNumber: number): string => {
   return `data:image/svg+xml;base64,${btoa(`
-    <svg width="720" height="405" viewBox="0 0 720 405" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect width="720" height="405" fill="#f3f4f6"/>
-      <text x="360" y="202.5" text-anchor="middle" fill="#6b7280" font-size="24">Slide ${slideNumber}</text>
+    <svg width="1000" height="562.5" viewBox="0 0 1000 562.5" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="1000" height="562.5" fill="#f3f4f6"/>
+      <text x="500" y="281.25" text-anchor="middle" fill="#6b7280" font-size="24">Slide ${slideNumber}</text>
     </svg>
   `)}`
 }
@@ -698,8 +709,7 @@ const onWizardFinish = async (wizardData: any) => {
       return
     }
     
-    // Store the wizard data for this specific wizard to prevent cross-contamination
-    currentWizard.wizardData = JSON.parse(JSON.stringify(wizardData)) // Deep copy
+    currentWizard.wizardData = JSON.parse(JSON.stringify(wizardData))
     
     
     globalStore.setLoading(true)
@@ -781,9 +791,6 @@ const replaceMockTableWithRealData = async (mockTable: any, wizardData: any, cur
     element.bounceId = currentWizard.wizardInstance.bounce.id
     element.bounceName = currentWizard.wizardInstance.bounce.displayName || currentWizard.wizardInstance.bounce.name
     
-    
-    // Apply template-specific flags based on the element's original configuration
-    // This ensures each element gets its own specific configuration, not the template-wide one
     if (element.attritionalOnly) {
       element.attritionalOnly = true
     }
@@ -814,7 +821,6 @@ const replaceMockTableWithRealData = async (mockTable: any, wizardData: any, cur
     
     await loadPortfolioDataForElement(element, currentWizard.wizardInstance.portfolio, currentWizard.wizardInstance.bounce)
     
-    // Take a per-element snapshot of the dashboard state so this table renders independently
     try {
       const { useDashboardStore } = await import('@/store/dashboard')
       const dashboardStore = useDashboardStore()
@@ -842,7 +848,6 @@ const replaceMockTableWithRealData = async (mockTable: any, wizardData: any, cur
         isShowingExposure: dashboardStore.isShowingExposure,
         underwriting_loss_ratios: dashboardStore.underwriting_loss_ratios,
         visibleColumns: deepCopy(dashboardStore.visibleColumns),
-        // Add the core dashboard configuration values
         gwpnwp: dashboardStore.dashboards.gwpnwp,
         ccr_nlr: dashboardStore.dashboards.ccr_nlr,
         seasonFactor: dashboardStore.dashboards.seasonFactor,
@@ -922,6 +927,8 @@ const loadPortfolioDataForElement = async (element: any, portfolio: any, bounce:
     completeData.bounceFullName = bounceName
     
     dashboardStore.setPortfolioData(completeData)
+    
+    await dashboardStore.loadDashboard(completeData)
     
     if (element.selectedFilters) {
       Object.assign(dashboardStore.selectedFilters, element.selectedFilters)

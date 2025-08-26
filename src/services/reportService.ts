@@ -19,6 +19,7 @@ export interface Report {
   createdAt: Date
   pptData: Blob
   slideImages?: string[]
+  slides?: any[] // Store slides data for editing
 }
 
 class ReportService {
@@ -85,6 +86,29 @@ class ReportService {
     
     const reports = await this.db!.getAllFromIndex('reports', 'templateId', templateId)
     return reports.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+  }
+
+  async updateReport(id: string, updates: Partial<Report>): Promise<void> {
+    try {
+      await this.initDB()
+      
+      const existingReport = await this.getReportById(id)
+      if (!existingReport) {
+        throw new Error('Report not found')
+      }
+      
+      const updatedReport = {
+        ...existingReport,
+        ...updates,
+        id, // Ensure ID doesn't change
+        createdAt: existingReport.createdAt // Preserve creation date
+      }
+      
+      await this.db!.put('reports', updatedReport)
+    } catch (error) {
+      console.error('Error updating report:', error)
+      throw error
+    }
   }
 
 }

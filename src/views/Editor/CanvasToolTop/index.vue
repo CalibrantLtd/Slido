@@ -71,7 +71,10 @@
         >
           ← Back
         </button>
-        <IconEdit class="handler-item" v-tooltip="'Save Template'" @click="createTemplate()" />
+        <IconEdit class="handler-item" v-tooltip="'Save Template'" @click="createTemplate()" v-if="!isReportMode" />
+        <button class="handler-item save-report-btn" v-tooltip="'Save Report'" @click="saveReport()" v-if="isReportMode">
+           Save
+        </button>
       </div>
 
     <Modal
@@ -135,7 +138,7 @@
 </template>
 
 <script lang="ts" setup>
-import { nextTick, ref, onMounted } from 'vue'
+import { nextTick, ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useMainStore, useSnapshotStore, useSlidesStore, useDashboardStore } from '@/store'
@@ -347,6 +350,124 @@ const handleTemplateSave = async (data: { name: string}) => {
   templateName.value = data.name
   templateCreatorVisible.value = false  
   await saveTemplate()  
+}
+
+const isReportMode = ref(false)
+const currentReportId = ref<string | null>(null)
+
+const handleReportMessage = (event: MessageEvent) => {
+  if (event.data.type === 'LOAD_REPORT') {
+    isReportMode.value = true
+    currentReportId.value = event.data.data.reportId
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('message', handleReportMessage)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('message', handleReportMessage)
+})
+
+const saveReport = async () => {
+  if (!currentReportId.value) return
+  
+  try {
+    // Show loading state
+    const saveButton = document.querySelector('.save-report-btn') as HTMLElement
+    if (saveButton) {
+      saveButton.style.opacity = '0.5'
+      saveButton.style.pointerEvents = 'none'
+    }
+    const currentSlides = slidesStore.slides
+    
+    const slidesData = JSON.parse(JSON.stringify(currentSlides))
+    
+    // Send data to parent (ReportEditor)
+    window.parent.postMessage({
+      type: 'SAVE_REPORT',
+      data: {
+        reportId: currentReportId.value,
+        slides: slidesData
+      }
+    }, '*')
+        
+    const handleSaveResponse = (event: MessageEvent) => {      
+      if (event.data.type === 'SAVE_SUCCESS') {
+        showSuccessMessage('Report saved successfully!')
+      } else if (event.data.type === 'SAVE_ERROR') {
+        showErrorMessage('Failed to save report. Please try again.')
+      }
+      
+      if (saveButton) {
+        saveButton.style.opacity = '1'
+        saveButton.style.pointerEvents = 'auto'
+      }
+      
+      window.removeEventListener('message', handleSaveResponse)
+    }
+    
+    window.addEventListener('message', handleSaveResponse)
+    
+  } catch (error) {
+    console.error('Error saving report:', error)
+    showErrorMessage('Failed to save report. Please try again.')
+  }
+}
+
+const showSuccessMessage = (message: string) => {
+  const toast = document.createElement('div')
+  toast.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #10b981;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 10000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    animation: slideIn 0.3s ease-out;
+  `
+  toast.textContent = message
+  document.body.appendChild(toast)
+  
+  setTimeout(() => {
+    toast.style.animation = 'slideOut 0.3s ease-in'
+    setTimeout(() => {
+      document.body.removeChild(toast)
+    }, 300)
+  }, 3000)
+}
+
+const showErrorMessage = (message: string) => {
+  const toast = document.createElement('div')
+  toast.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #ef4444;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 10000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    animation: slideIn 0.3s ease-out;
+  `
+  toast.textContent = message
+  document.body.appendChild(toast)
+  
+  setTimeout(() => {
+    toast.style.animation = 'slideOut 0.3s ease-in'
+    setTimeout(() => {
+      document.body.removeChild(toast)
+    }, 300)
+  }, 5000)
 }
 
 // Create performance table with dummy data
@@ -1503,5 +1624,44 @@ onMounted(async () => {
 .error-btn.primary:hover {
   background: #4a9d7a;
   border-color: #4a9d7a;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+.save-report-btn {
+  background: white;
+  color: #55B691;
+  border: 1px solid #55B691;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.save-report-btn:hover {
+  background: #55B691;
+  color: white;
 }
 </style>

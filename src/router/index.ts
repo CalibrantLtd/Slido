@@ -26,6 +26,16 @@ const router = createRouter({
       path: '/template/:id',
       name: 'template-view',
       component: () => import('@/components/TemplateViewer/TemplateViewer.vue')
+    },
+    {
+      path: '/reports/:id/edit',
+      name: 'report-edit',
+      component: () => import('@/components/ReportEditor/ReportEditor.vue')
+    },
+    {
+      path: '/reports/:id/slideshow',
+      name: 'report-slideshow',
+      component: () => import('@/components/ReportSlideshow/ReportSlideshow.vue')
     }
   ]
 })

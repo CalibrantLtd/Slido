@@ -24,7 +24,7 @@
           width: elementInfo.width + 'px',
           height: elementInfo.height + 'px',
         }"
-        v-contextmenu="contextmenus"
+        v-contextmenu="contextmenus || (() => null)"
         @mousedown="$event => handleSelectElement($event)"
         @touchstart="$event => handleSelectElement($event)"
         @dragstart.prevent
@@ -93,61 +93,67 @@ const props = defineProps<{
     maxRows?: number
     _snapshot?: any
   }
-  selectElement: (e: MouseEvent | TouchEvent, element: PPTElement, canMove?: boolean) => void
-  contextmenus: () => ContextmenuItem[] | null
+  selectElement?: (e: MouseEvent | TouchEvent, element: PPTElement, canMove?: boolean) => void
+  contextmenus?: () => ContextmenuItem[] | null
 }>()
 
 const elementRef = ref<HTMLElement>()
 const dashboardStore = useDashboardStore()
 
-// Load portfolio data if element has portfolio/bounce info
 onMounted(async () => {
-  if ((props.elementInfo as any)._snapshot) return
+  if ((props.elementInfo as any)._snapshot) {
+    return
+  }
   
-  if (props.elementInfo.portfolioId && props.elementInfo.bounceId && !props.elementInfo.isTemplatePlaceholder) {
-    try {      
-      // Fetch complete portfolio data
-      const completeData = await portfolioService.fetchCompletePortfolioData(
-        props.elementInfo.portfolioId,
-        props.elementInfo.bounceId
-      )
-      
-      // Parse bounce name
-      const bounceName = props.elementInfo.bounceName || ''
-      completeData.portfolioName = props.elementInfo.portfolioName || ''
-      completeData.bounceName = bounceName.slice(26) || bounceName.slice(25)
-      completeData.bounceDate = bounceName.slice(0, 6)
-      completeData.bounceFullName = bounceName
-      
-      // Set portfolio data in dashboard store
-      dashboardStore.setPortfolioData(completeData)
-      
-      // Wait for portfolio data to be fully processed
-      await new Promise(resolve => setTimeout(resolve, 200))
-      
-      // Apply stored filters
-      if (props.elementInfo.selectedFilters) {
-        Object.assign(dashboardStore.selectedFilters, props.elementInfo.selectedFilters)
-      }
-      
-      if (props.elementInfo.accidentUnderwriting) {
-        dashboardStore.setAccidentUnderwriting(props.elementInfo.accidentUnderwriting)
-      }
-      
-      if (props.elementInfo.columnConfig?.showColumn) {
-        dashboardStore.setColumnState({
-          showColumn: props.elementInfo.columnConfig.showColumn,
-          margin: props.elementInfo.columnConfig.margin,
-          showColumnTotal: props.elementInfo.columnConfig.showColumnTotal,
-          totalMargin: props.elementInfo.columnConfig.totalMargin
-        })
-      }
-      
-      await dashboardStore.loadDashboard(completeData)
-      
-    } catch (error) {
-      console.error('❌ Error loading portfolio data for dashboard table:', error)
+  if (!props.elementInfo.portfolioId || !props.elementInfo.bounceId || props.elementInfo.isTemplatePlaceholder) {
+    return
+  }
+  
+  try {      
+    // Fetch complete portfolio data
+    const completeData = await portfolioService.fetchCompletePortfolioData(
+      props.elementInfo.portfolioId,
+      props.elementInfo.bounceId
+    )
+    
+    // Parse bounce name
+    const bounceName = props.elementInfo.bounceName || ''
+    completeData.portfolioName = props.elementInfo.portfolioName || ''
+    completeData.bounceName = bounceName.slice(26) || bounceName.slice(25)
+    completeData.bounceDate = bounceName.slice(0, 6)
+    completeData.bounceFullName = bounceName
+    
+    // Set portfolio data in dashboard store
+    dashboardStore.setPortfolioData(completeData)
+    
+    // Load dashboard data
+    await dashboardStore.loadDashboard(completeData)
+    
+    // Wait for portfolio data to be fully processed
+    await new Promise(resolve => setTimeout(resolve, 200))
+    
+    // Apply stored filters
+    if (props.elementInfo.selectedFilters) {
+      Object.assign(dashboardStore.selectedFilters, props.elementInfo.selectedFilters)
     }
+    
+    if (props.elementInfo.accidentUnderwriting) {
+      dashboardStore.setAccidentUnderwriting(props.elementInfo.accidentUnderwriting)
+    }
+    
+    if (props.elementInfo.columnConfig?.showColumn) {
+      dashboardStore.setColumnState({
+        showColumn: props.elementInfo.columnConfig.showColumn,
+        margin: props.elementInfo.columnConfig.margin,
+        showColumnTotal: props.elementInfo.columnConfig.showColumnTotal,
+        totalMargin: props.elementInfo.columnConfig.totalMargin
+      })
+    }
+    
+    await dashboardStore.loadDashboard(completeData)
+      
+  } catch (error) {
+    console.error('❌ Error loading portfolio data for dashboard table:', error)
   }
 })
 
@@ -157,7 +163,9 @@ const handleSelectElement = (e: MouseEvent | TouchEvent, canMove = false) => {
   e.preventDefault()
 
   // Disable resizing for template dashboard tables
-  props.selectElement(e, props.elementInfo, canMove)
+  if (props.selectElement) {
+    props.selectElement(e, props.elementInfo, canMove)
+  }
 }
 </script>
 

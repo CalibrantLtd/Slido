@@ -97,7 +97,15 @@
       <div class="viewer-modal-content" @click.stop>
         <div class="viewer-header">
           <h3>{{ viewerModal.report?.name }}</h3>
-          <button @click="closeViewer" class="close-btn">×</button>
+          <div class="viewer-header-actions">
+            <button @click="editReport(viewerModal.report)" class="action-btn edit-btn-header" title="Edit Report">
+              Edit
+            </button>
+            <button @click="startSlideshow(viewerModal.report)" class="action-btn slideshow-btn" title="Start Slideshow">
+              Slideshow
+            </button>
+            <button @click="closeViewer" class="close-btn">×</button>
+          </div>
         </div>
         <div class="viewer-body">
           <div class="slide-viewer">
@@ -148,8 +156,11 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { reportService, type Report } from '@/services/reportService'
 import { saveAs } from 'file-saver'
+
+const router = useRouter()
 
 const reports = ref<Report[]>([])
 const contextMenu = ref({
@@ -337,6 +348,18 @@ const formatDate = (date: Date): string => {
     hour: '2-digit',
     minute: '2-digit'
   }).format(date)
+}
+
+const editReport = (report: Report | null) => {
+  if (!report) return
+  closeViewer()
+  router.push(`/reports/${report.id}/edit`)
+}
+
+const startSlideshow = (report: Report | null) => {
+  if (!report) return
+  closeViewer()
+  router.push(`/reports/${report.id}/slideshow`)
 }
 </script>
 
@@ -665,6 +688,60 @@ const formatDate = (date: Date): string => {
   color: #1f2937;
 }
 
+.viewer-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.action-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid #e5e7eb;
+  background: white;
+  color: #374151;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.action-btn:hover {
+  background: #55B691;
+  color: white;
+  border-color: #55B691;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(85, 182, 145, 0.2);
+}
+
+.edit-btn-header {
+  background: white;
+  color: #374151;
+  border-color: #e5e7eb;
+}
+
+.edit-btn-header:hover {
+  background: #55B691;
+  color: white;
+  border-color: #55B691;
+}
+
+.slideshow-btn {
+  background: white;
+  color: #374151;
+  border-color: #e5e7eb;
+}
+
+.slideshow-btn:hover {
+  background: #55B691;
+  color: white;
+  border-color: #55B691;
+}
+
 .close-btn {
   background: none;
   border: none;
@@ -715,6 +792,7 @@ const formatDate = (date: Date): string => {
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
+    aspect-ratio: 1000 / 562.5; /* Maintain exact slide aspect ratio */
 }
 
 .loading-slide {
