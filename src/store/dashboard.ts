@@ -75,6 +75,9 @@ export const useDashboardStore = defineStore('slido-dashboard', () => {
   const graphConfig = ref({
     isGLR: true,
     isNormalised: true,
+    showGwpBars: true,
+    showGepBars: true,
+    showSeasonalityApriori: true,
   });
 
   const chart_data = ref<any[]>([]);

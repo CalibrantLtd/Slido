@@ -157,12 +157,12 @@ onMounted(async () => {
   }
 })
 
-const handleSelectElement = (e: MouseEvent | TouchEvent, canMove = false) => {
+const handleSelectElement = (e: MouseEvent | TouchEvent, canMove = true) => {
   if (props.elementInfo.lock) return
   e.stopPropagation()
   e.preventDefault()
 
-  // Disable resizing for template dashboard tables
+  // Allow moving for dashboard tables
   if (props.selectElement) {
     props.selectElement(e, props.elementInfo, canMove)
   }
@@ -174,11 +174,11 @@ const handleSelectElement = (e: MouseEvent | TouchEvent, canMove = false) => {
   position: absolute;
   cursor: pointer;
   user-select: none;
-  pointer-events: none; /* Disable all pointer events */
+  pointer-events: auto; /* Enable pointer events for dragging */
 }
 
 .dashboard-table-element .element-content {
-  pointer-events: auto; /* Re-enable for selection only */
+  pointer-events: auto; /* Enable pointer events for interaction */
 }
 
 .rotate-wrapper {

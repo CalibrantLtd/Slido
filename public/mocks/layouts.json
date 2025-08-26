@@ -1000,6 +1000,91 @@
     }
   },
   {
+    "id": "title-and-performance-chart",
+    "name": "Title and Performance Chart",
+    "elements": [
+      {
+        "type": "text",
+        "id": "date-text",
+        "left": 30,
+        "top": 20,
+        "width": 200,
+        "height": 30,
+        "content": "<p style='text-align: left;'><span style='color: #55B691; font-size: 16px;'>{{currentDate}}</span></p>",
+        "rotate": 0,
+        "defaultFontName": "{{fontName}}",
+        "defaultColor": "#55B691"
+      },
+      {
+        "type": "text",
+        "id": "title-text",
+        "left": 90,
+        "top": 70,
+        "width": 800,
+        "height": 100,
+        "content": "<p style='text-align: left;'><span style='color: #55B691; font-size: 48px; font-weight: bold; opacity: 0.5;'>Add Title</span></p>",
+        "rotate": 0,
+        "defaultFontName": "{{fontName}}",
+        "defaultColor": "#55B691"
+      },
+      {
+        "type": "text",
+        "id": "left-text",
+        "left": 30,
+        "top": 170,
+        "width": 300,
+        "height": 320,
+        "content": "<p style='text-align: left;'><span style='color: #ffffff; font-size: 16px;'>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</span></p>",
+        "rotate": 0,
+        "defaultFontName": "{{fontName}}",
+        "defaultColor": "#ffffff"
+      },
+      {
+        "type": "image",
+        "id": "performance-chart-mock",
+        "left": 350,
+        "top": 140,
+        "width": 580,
+        "height": 350,
+        "src": "/images/mock-chart-performance.svg",
+        "visible": true,
+        "lock": true
+      },
+      {
+        "type": "performance-chart",
+        "id": "performance-chart-1",
+        "left": 350,
+        "top": 140,
+        "width": 580,
+        "height": 350,
+        "isTemplatePlaceholder": true,
+        "portfolioId": null,
+        "bounceId": null,
+        "isInvisible": true,
+        "lock": true
+      },
+      {
+        "type": "text",
+        "id": "sybil-text",
+        "left": 10,
+        "top": 513,
+        "width": 200,
+        "height": 30,
+        "content": "<p style='text-align: left;'><span style='color: #ffffff; font-size: 16px; font-family: Arial;'>sybil.cloud</span></p>",
+        "rotate": 0,
+        "defaultFontName": "Arial",
+        "defaultColor": "#ffffff"
+      }
+    ],
+    "background": {
+      "type": "image",
+      "image": {
+        "src": "/images/Title_and_content2.svg",
+        "size": "cover"
+      }
+    }
+  },
+  {
     "id": "title-table-text",
     "name": "Title, Table, Text",
     "elements": [

@@ -114,6 +114,7 @@
         :portfolio="currentWizardData.wizardInstance.portfolio"
         :bounce="currentWizardData.wizardInstance.bounce"
         :element="currentWizardData.wizardInstance.mockTable?.element"
+        :wizard-type="currentWizardData.wizardInstance.wizardType"
         @close="onWizardClose"
         @finish="onWizardFinish"
       />
@@ -202,6 +203,7 @@ import LatexElement from '@/views/components/element/LatexElement/index.vue'
 import VideoElement from '@/views/components/element/VideoElement/index.vue'
 import AudioElement from '@/views/components/element/AudioElement/index.vue'
 import DashboardTableElement from '@/views/components/element/DashboardTableElement/index.vue'
+import PerformanceChartElement from '@/views/components/element/PerformanceChartElement/index.vue'
 import PortfolioBounceSelectionModal from '@/components/PortfolioBounceSelectionModal.vue'
 import Modal from '@/components/Modal.vue'
 import SybilWizard from '@/views/Editor/CanvasToolTop/SybilWizard.vue'
@@ -417,7 +419,7 @@ const scanTemplateForMockDashboardTables = async () => {
     for (let elementIndex = 0; elementIndex < slide.elements.length; elementIndex++) {
       const element = slide.elements[elementIndex]
       
-      if (element.type === 'dashboard-table') {
+      if (element.type === 'dashboard-table' || element.type === 'performance-chart') {
         if (element.isTemplatePlaceholder) {
           const mockTable = {
             slideId: slide.id,
@@ -435,11 +437,14 @@ const scanTemplateForMockDashboardTables = async () => {
 
 const showDashboardWizardForMockTables = async (mockTables: any[], portfolio: any, bounce: any) => {
   const wizardPromises = mockTables.map((mockTable) => {
+    const wizardType = mockTable.element.type === 'performance-chart' ? 'performance-chart' : 
+                       'dashboard-table'
+    
     const wizardInstance = {
       portfolio,
       bounce,
       mockTable,
-      wizardType: 'dashboard-table'
+      wizardType
     }
     
     return new Promise((resolve, reject) => {
@@ -457,7 +462,7 @@ const exportTemplateWithRealData = async () => {
     
     for (const slide of slides.value) {
       for (const element of slide.elements) {
-        if (element.type === 'dashboard-table' && element.portfolioName && element.bounceName) {
+        if ((element.type === 'dashboard-table' || element.type === 'performance-chart' || element.type === 'epi-chart') && element.portfolioName && element.bounceName) {
           portfolioName = element.portfolioName
           bounceName = element.bounceName
           break
@@ -816,6 +821,12 @@ const replaceMockTableWithRealData = async (mockTable: any, wizardData: any, cur
       svgImage.visible = false
     }
     
+    const chartSvgImage = slide.elements.find(e => e.type === 'image' && e.src?.includes('mock-chart-performance.svg'))
+    if (chartSvgImage) {
+      chartSvgImage._originalVisibility = chartSvgImage.visible !== false
+      chartSvgImage.visible = false
+    }
+    
     element._originalInvisible = element.isInvisible
     element.isInvisible = false
     
@@ -834,6 +845,7 @@ const replaceMockTableWithRealData = async (mockTable: any, wizardData: any, cur
         quarterly_dashboard_data: deepCopy(dashboardStore.quarterly_dashboard_data),
         binder_dashboard_data: deepCopy(dashboardStore.binder_dashboard_data),
         yearly_dashboard_data: deepCopy(dashboardStore.yearly_dashboard_data),
+        chart_data: deepCopy(dashboardStore.chart_data),
         offMarginGWPGEP: dashboardStore.offMarginGWPGEP,
         isQuarterSubTotal: dashboardStore.isQuarterSubTotal,
         isQuarterSubTotalUp: dashboardStore.isQuarterSubTotalUp,
@@ -892,6 +904,12 @@ const restoreMockTables = () => {
             delete svgImage._originalVisibility
           }
           
+          const chartSvgImage = slide.elements.find(e => e.type === 'image' && e.src?.includes('mock-chart-performance.svg'))
+          if (chartSvgImage && chartSvgImage._originalVisibility !== undefined) {
+            chartSvgImage.visible = chartSvgImage._originalVisibility
+            delete chartSvgImage._originalVisibility
+          }
+          
           if (element._originalInvisible !== undefined) {
             element.isInvisible = element._originalInvisible
             delete element._originalInvisible
@@ -947,7 +965,33 @@ const loadPortfolioDataForElement = async (element: any, portfolio: any, bounce:
       })
     }
     
+    if (element._snapshot) {
+      const snapshot = element._snapshot
+      if (snapshot.seasonFactor !== undefined) {
+        dashboardStore.dashboards.seasonFactor = snapshot.seasonFactor
+      }
+      if (snapshot.ccr_nlr) {
+        dashboardStore.dashboards.ccr_nlr = snapshot.ccr_nlr
+      }
+      if (snapshot.uw_acc) {
+        dashboardStore.dashboards.uw_acc = snapshot.uw_acc
+      }
+      if (snapshot.mqy) {
+        dashboardStore.dashboards.mqy = snapshot.mqy
+      }
+      if (snapshot.gwpnwp) {
+        dashboardStore.dashboards.gwpnwp = snapshot.gwpnwp
+      }
+      if (snapshot.ratio_amount) {
+        dashboardStore.dashboards.ratio_amount = snapshot.ratio_amount
+      }
+    }
+    
     await dashboardStore.loadDashboard(completeData)
+    
+    if (element.type === 'performance-chart') {
+      dashboardStore.setChartData()
+    }
     
   } catch (error) {
     console.error('Error loading portfolio data for element:', error)
@@ -970,7 +1014,8 @@ const elementComponents = {
   'latex': LatexElement,
   'video': VideoElement,
   'audio': AudioElement,
-  'dashboard-table': DashboardTableElement
+  'dashboard-table': DashboardTableElement,
+  'performance-chart': PerformanceChartElement
 }
 
 const getElementComponent = (elementType: string) => {
@@ -990,6 +1035,17 @@ const shouldHideElement = (element: any) => {
     }
   }
   
+  if (element.type === 'image' && element.src?.includes('mock-chart-performance.svg')) {
+    const slide = slides.value[currentSlideIndex.value]
+    if (slide) {
+      const performanceChart = slide.elements.find(e => 
+        e.type === 'performance-chart' && 
+        !e.isTemplatePlaceholder && 
+        e.portfolioId
+      )
+      return !!performanceChart
+    }
+  }
   
   return false
 }

@@ -31,6 +31,7 @@ export const enum ElementTypes {
   VIDEO = 'video',
   AUDIO = 'audio',
   DASHBOARD_TABLE = 'dashboard-table',
+  PERFORMANCE_CHART = 'performance-chart',
 }
 
 /**
@@ -637,7 +638,27 @@ export interface PPTDashboardTableElement extends PPTBaseElement {
   }
 }
 
-export type PPTElement = PPTTextElement | PPTImageElement | PPTShapeElement | PPTLineElement | PPTChartElement | PPTTableElement | PPTLatexElement | PPTVideoElement | PPTAudioElement | PPTDashboardTableElement
+export interface PPTPerformanceChartElement extends PPTBaseElement {
+  type: 'performance-chart'
+  props?: {
+    overflow?: string
+  }
+  portfolioId?: string
+  portfolioName?: string
+  bounceId?: string
+  bounceName?: string
+  selectedFilters?: any
+  accidentUnderwriting?: 'uw' | 'acc'
+  chartTitle?: string
+  showSeasonality?: boolean
+  showTarget?: boolean
+  isGLR?: boolean
+  isNormalised?: boolean
+  isTemplatePlaceholder?: boolean
+  isInvisible?: boolean
+}
+
+export type PPTElement = PPTTextElement | PPTImageElement | PPTShapeElement | PPTLineElement | PPTChartElement | PPTTableElement | PPTLatexElement | PPTVideoElement | PPTAudioElement | PPTDashboardTableElement | PPTPerformanceChartElement
 
 export type AnimationType = 'in' | 'out' | 'attention'
 export type AnimationTrigger = 'click' | 'meantime' | 'auto'

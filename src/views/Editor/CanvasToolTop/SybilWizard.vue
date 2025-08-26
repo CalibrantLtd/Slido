@@ -53,10 +53,38 @@
             <label class="radio"><input type="radio" name="seasonality" value="yes" :checked="dashboards.seasonFactor" @change="() => setSeasonality(true)"> Seasonality Adjustment</label>
           </div>
 
-          <div class="option-group">
+          <div class="option-group" v-if="!isChartWizard">
             <div class="group-title">Display</div>
             <label class="radio"><input type="radio" name="ratio_amount" value="ratios" :checked="dashboards.ratio_amount==='ratios'" @change="() => setRatioAmount('ratios')"> Ratios</label>
             <label class="radio"><input type="radio" name="ratio_amount" value="amount" :checked="dashboards.ratio_amount==='amount'" @change="() => setRatioAmount('amount')"> Amounts</label>
+          </div>
+
+          <div class="option-group" v-if="isChartWizard">
+            <div class="group-title">Chart Options</div>
+            <label class="checkbox">
+              <input type="checkbox" :checked="graphConfig.isGLR" @change="() => setCommission(!graphConfig.isGLR)">
+              Include Commission
+            </label>
+            <label class="checkbox">
+              <input type="checkbox" :checked="graphConfig.isNormalised" @change="() => setNormalised(!graphConfig.isNormalised)">
+              Normalized View
+            </label>
+          </div>
+
+          <div class="option-group" v-if="isChartWizard">
+            <div class="group-title">Series Visibility</div>
+            <label class="checkbox">
+              <input type="checkbox" :checked="graphConfig.showGwpBars" @change="() => setShowGwpBars(!graphConfig.showGwpBars)">
+              Show GWP/NWP
+            </label>
+            <label class="checkbox">
+              <input type="checkbox" :checked="graphConfig.showGepBars" @change="() => setShowGepBars(!graphConfig.showGepBars)">
+              Show GEP/NEP
+            </label>
+            <label class="checkbox">
+              <input type="checkbox" :checked="graphConfig.showSeasonalityApriori" @change="() => setShowSeasonalityApriori(!graphConfig.showSeasonalityApriori)">
+              Show Seasonality Adjusted A-priori
+            </label>
           </div>
 
           <div class="option-group">
@@ -101,6 +129,10 @@ const isSimplifiedTemplate = computed(() => {
          props.element.totalUltimateOnly ||
          props.element.lossRatiosOnly ||
          props.element.largeLossLoad
+})
+
+const isChartWizard = computed(() => {
+  return props.wizardType === 'performance-chart'
 })
 
 const hideSeasonalityAdjustment = computed(() => {
@@ -167,6 +199,7 @@ const currentPortfolio = computed(() => dashboardStore.currentPortfolio)
 const dashboards = computed(() => dashboardStore.dashboards)
 const isBindedYears = computed(() => dashboardStore.isBindedYears)
 const underwriting_loss_ratios = computed(() => dashboardStore.underwriting_loss_ratios)
+const graphConfig = computed(() => dashboardStore.graphConfig)
 
 function setPeriod(period) { dashboardStore.setPeriod(period) }
 async function setUwMode(target) {
@@ -220,6 +253,11 @@ function setBasis(val) { if (underwriting_loss_ratios.value !== val) dashboardSt
 function setCcrNlr(val) { if (dashboards.value.ccr_nlr !== val) dashboardStore.changeccrnlr() }
 function setSeasonality(val) { if (!!dashboards.value.seasonFactor !== !!val) dashboardStore.changeSeas() }
 function setRatioAmount(val) { if (dashboards.value.ratio_amount !== val) dashboardStore.switch_ratio_amount() }
+function setCommission(val) { dashboardStore.graphConfig.isGLR = val }
+function setNormalised(val) { dashboardStore.graphConfig.isNormalised = val }
+function setShowGwpBars(val) { dashboardStore.graphConfig.showGwpBars = val }
+function setShowGepBars(val) { dashboardStore.graphConfig.showGepBars = val }
+function setShowSeasonalityApriori(val) { dashboardStore.graphConfig.showSeasonalityApriori = val }
 
 const finish = () => {
   const data = {
@@ -295,6 +333,13 @@ const finish = () => {
 }
 
 .radio input[type="radio"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  cursor: pointer;
+}
+
+.checkbox input[type="checkbox"] {
   width: 16px;
   height: 16px;
   margin: 0;

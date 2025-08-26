@@ -264,6 +264,10 @@ const handleSybilObjectSelect = (sybilObject: SybilObjectItem) => {
     // Create a template placeholder dashboard table without wizard
     createTemplateDashboardTable()
   } else if (sybilObject.type === 'dashboard-table-loaded') {
+    selectedSybilType.value = sybilObject.type
+    showPortfolioBounceSelection()
+  } else if (sybilObject.type === 'performance-chart-loaded') {
+    selectedSybilType.value = sybilObject.type
     showPortfolioBounceSelection()
   } else {
     selectedSybilType.value = sybilObject.type
@@ -310,9 +314,46 @@ const onPortfolioBounceConfirm = (portfolio: any, bounce: any) => {
   selectedBounce.value = bounce
   portfolioBounceModalVisible.value = false
   
-  selectedSybilType.value = 'dashboard-table-loaded'
+  // Don't change selectedSybilType - it's already set correctly
   sybilWizardVisible.value = true
 }
+
+const createPerformanceChartLoaded = async (wizardData: any) => {
+  try {    
+    const element = {
+      type: 'performance-chart' as const,
+      id: nanoid(10),
+      width: 1200,
+      height: 800,
+      rotate: 0,
+      left: (1920 - 1200) / 2,
+      top: (1080 - 800) / 2,
+      portfolioId: selectedPortfolio.value.id,
+      portfolioName: selectedPortfolio.value.name,
+      bounceId: selectedBounce.value.id,
+      bounceName: selectedBounce.value.displayName || selectedBounce.value.name,
+      chartTitle: 'Performance Results',
+      showSeasonality: false,
+      showTarget: true,
+      isGLR: false,
+      isNormalised: false,
+      accidentUnderwriting: 'uw',
+      claimsType: ['', 'Employers Liability', 'Public Liability', 'Construction/Building'],
+      normalise: [false, true, true, false],
+      ccrnlr: 'GLR',
+      uwAcc: 'uw',
+      mqy: 'quarter',
+      isAve: false,
+      gwpnwp: 'GWP'
+    } as any    
+    slidesStore.addElement(element)
+    
+  } catch (error) {
+    console.error('❌ Error creating performance chart loaded:', error)
+    showErrorModal('Failed to create performance chart. Please try again.')
+  }
+}
+
 
 const onPortfolioBounceModalClose = () => {
   portfolioBounceModalVisible.value = false
@@ -988,6 +1029,8 @@ const handleWizardFinish = (data: any) => {
     createDashboardTable(data)
   } else if (data.wizardType === 'dashboard-table-loaded') {
     createDashboardTableLoaded(data)
+  } else if (data.wizardType === 'performance-chart-loaded') {
+    createPerformanceChartLoaded(data)
   }
   // Add other wizard types here as needed
   
