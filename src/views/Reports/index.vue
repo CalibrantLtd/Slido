@@ -6,11 +6,11 @@
     </div>
     
     <div class="reports-content">
-      <div v-if="paginatedReports.length > 0" class="reports-grid">
+      <div v-if="reports.length > 0" class="reports-grid">
         <div 
           v-for="report in paginatedReports" 
           :key="report.id"
-          class="report-item"
+          class="report-card"
           @click="viewReport(report)"
           @contextmenu="showContextMenu($event, report)"
         >
@@ -29,7 +29,14 @@
         </div>
       </div>
 
-      <div v-if="totalPages > 1" class="pagination">
+      <div v-else class="empty-state">
+        <div class="empty-icon">📊</div>
+        <h3>No Reports Generated Yet</h3>
+        <p>Generated reports will appear here once you create them from templates.</p>
+      </div>
+
+      <!-- Pagination -->
+      <div v-if="reports.length > itemsPerPage" class="pagination">
         <button 
           @click="previousPage" 
           :disabled="currentPage === 1"
@@ -47,12 +54,6 @@
         >
           Next →
         </button>
-      </div>
-      
-      <div v-else class="empty-state">
-        <div class="empty-icon">📊</div>
-        <h3>No Reports Generated Yet</h3>
-        <p>Generated reports will appear here once you create them from templates.</p>
       </div>
     </div>
     
@@ -341,60 +342,61 @@ const formatDate = (date: Date): string => {
 
 <style scoped>
 .reports-container {
-  padding: 20px;
-  height: 100vh;
-  background-color: #f9fafb;
+  padding: 24px;
+  background: #f8fafc;
+  min-height: 100vh;
   position: relative;
 }
 
 .content-header {
-  margin-bottom: 30px;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  margin-bottom: 32px;
 }
 
 .content-header h2 {
-  font-size: 24px;
-  font-weight: 600;
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
   color: #1f2937;
-  margin: 0 0 8px 0;
 }
 
 .content-header p {
   color: #6b7280;
   margin: 0;
+  margin-left: 16px;
+  font-size: 16px;
 }
 
 .reports-content {
-  height: calc(100vh - 120px);
   display: flex;
   flex-direction: column;
 }
 
 .reports-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 16px;
-  padding: 16px 0;
-  flex: 1;
-  overflow-y: auto;
 }
 
-.report-item {
+.report-card {
   background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 12px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s;
   position: relative;
+  padding: 12px;
   display: flex;
   flex-direction: column;
   height: 108px;
 }
 
-.report-item:hover {
-  border-color: #55B691;
-  box-shadow: 0 4px 12px rgba(85, 182, 145, 0.15);
+.report-card:hover {
   transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
 .report-info {
@@ -434,21 +436,23 @@ const formatDate = (date: Date): string => {
   transition: opacity 0.2s ease;
 }
 
-.report-item:hover .report-actions {
+.report-card:hover .report-actions {
   opacity: 1;
 }
 
 .download-btn,
 .delete-btn {
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.95);
   border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  padding: 6px 12px;
+  border-radius: 8px;
+  padding: 8px 12px;
   cursor: pointer;
   font-size: 12px;
   font-weight: 500;
   transition: all 0.2s ease;
-  min-width: 80px;
+  min-width: 70px;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .download-btn {
@@ -460,7 +464,8 @@ const formatDate = (date: Date): string => {
 .download-btn:hover {
   background: #4a9d7a;
   border-color: #4a9d7a;
-  transform: scale(1.05);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(85, 182, 145, 0.3);
 }
 
 .delete-btn {
@@ -472,16 +477,13 @@ const formatDate = (date: Date): string => {
 .delete-btn:hover {
   background: #dc2626;
   border-color: #dc2626;
-  transform: scale(1.05);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
 }
 
 .empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
   text-align: center;
+  padding: 80px 20px;
   color: #6b7280;
 }
 
@@ -491,15 +493,17 @@ const formatDate = (date: Date): string => {
 }
 
 .empty-state h3 {
-  font-size: 18px;
-  font-weight: 600;
   margin: 0 0 8px 0;
+  font-size: 20px;
+  font-weight: 600;
   color: #374151;
 }
 
 .empty-state p {
   margin: 0;
+  font-size: 14px;
   max-width: 400px;
+  margin: 0 auto;
 }
 
 .context-menu {
