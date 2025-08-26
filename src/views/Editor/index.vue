@@ -212,6 +212,15 @@ const generateSlideImagesFromEditor = async (slides: any[]): Promise<string[]> =
           box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.01), 0 0 12px 0 rgba(0, 0, 0, 0.1);
         `
         
+        // Hide selection outlines during screenshot
+        const operateElements = viewportWrapper.querySelectorAll('.operate')
+        const originalOperateStyles: string[] = []
+        operateElements.forEach((element: Element) => {
+          const htmlElement = element as HTMLElement
+          originalOperateStyles.push(htmlElement.style.cssText)
+          htmlElement.style.display = 'none'
+        })
+        
         const dataUrl = await htmlToImage.toSvg(viewportWrapper, {
           quality: 1.0,
           backgroundColor: '#ffffff',
@@ -225,6 +234,12 @@ const generateSlideImagesFromEditor = async (slides: any[]): Promise<string[]> =
           viewport.style.transform = originalTransform
         }
         viewportWrapper.style.cssText = originalWrapperStyle
+        
+        // Restore selection outlines after screenshot
+        for (let i = 0; i < operateElements.length; i++) {
+          const element = operateElements[i] as HTMLElement
+          element.style.cssText = originalOperateStyles[i]
+        }
         
         slideImages.push(dataUrl)
       }

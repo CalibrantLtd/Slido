@@ -418,7 +418,8 @@ const saveReport = async () => {
   if (!currentReportId.value) return
   
   try {
-    // Show loading state
+    globalStore.setLoading(true)
+    
     const saveButton = document.querySelector('.save-report-btn') as HTMLElement
     if (saveButton) {
       saveButton.style.opacity = '0.5'
@@ -457,6 +458,8 @@ const saveReport = async () => {
   } catch (error) {
     console.error('Error saving report:', error)
     showErrorMessage('Failed to save report. Please try again.')
+  } finally {
+    globalStore.setLoading(false)
   }
 }
 

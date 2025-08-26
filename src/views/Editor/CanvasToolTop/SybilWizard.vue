@@ -1,7 +1,7 @@
 <template>
     <div class="wizard">
       <div class="header">
-      <h3>Dashboard Table Setup</h3>
+      <h3>{{ isChartWizard ? 'Performance Chart Setup' : 'Dashboard Table Setup' }}</h3>
       </div>
   
       <div class="content">
@@ -313,7 +313,6 @@ const applyPrePopulatedSettings = async (settings) => {
       })
     }
     
-    // Apply chart configuration (if performance chart)
     if (chartConfig && isChartWizard.value) {     
       if (chartConfig.isGLR !== undefined) {
         setCommission(chartConfig.isGLR)

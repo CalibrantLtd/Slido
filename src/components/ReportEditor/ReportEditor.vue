@@ -22,10 +22,12 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { reportService } from '@/services/reportService'
+import { useGlobalStore } from '@/stores/global'
 
 const route = useRoute()
 const router = useRouter()
 const reportId = route.params.id as string
+const globalStore = useGlobalStore()
 
 const loading = ref(true)
 const error = ref('')
@@ -90,6 +92,8 @@ const handleEditorMessage = async (event: MessageEvent) => {
     }
   } else if (event.data.type === 'SAVE_REPORT') {
     try {
+      globalStore.setLoading(true)
+      
       const { slides } = event.data.data
       
       if (!slides) {
@@ -117,6 +121,8 @@ const handleEditorMessage = async (event: MessageEvent) => {
         type: 'SAVE_ERROR',
         error: 'Failed to save report'
       }, '*')
+    } finally {
+      globalStore.setLoading(false)
     }
   } else if (event.data.type === 'GO_BACK_TO_REPORTS') {
     goBack()
