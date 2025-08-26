@@ -39,6 +39,7 @@
           overflow="auto"
           :container-width="elementInfo.width"
           :container-height="elementInfo.height"
+          :attritional-only="elementInfo.attritionalOnly"
         />
         <MockDashboardTable v-else />
         
@@ -77,6 +78,7 @@ const props = defineProps<{
     columnConfig?: any
     isTemplatePlaceholder?: boolean
     isInvisible?: boolean
+    attritionalOnly?: boolean
   }
   selectElement: (e: MouseEvent | TouchEvent, element: PPTElement, canMove?: boolean) => void
   contextmenus: () => ContextmenuItem[] | null

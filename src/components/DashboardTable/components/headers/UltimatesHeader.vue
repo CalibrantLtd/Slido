@@ -17,9 +17,12 @@ const props = defineProps<{
   showColumnTotal: boolean;
   totalMargin: number;
   leftColumnSize: number;
+  claimsType?: string[];
+  visibleColumns?: number[];
+  hideTotals?: boolean;
 }>();
 
-const visibleColumns = computed(() => dashboardStore.visibleColumns);
+const visibleColumns = computed(() => props.visibleColumns || dashboardStore.visibleColumns);
 
 function onClickColumn(item: string) {
   emit('onChangeShowColumn', { val: !props.showColumn[item], item: item });
@@ -31,7 +34,7 @@ function onClickTotalColumn() {
   emit('onChangeTotalMargin', 112 - props.totalMargin);
 }
 
-const claimsType = computed<string[]>(() => portfolioStore.parameters.claims_nature);
+const claimsType = computed<string[]>(() => props.claimsType || portfolioStore.parameters.claims_nature);
 </script>
 <template>
   <template v-for="(item, index) in claimsType" :key="index">
@@ -214,6 +217,7 @@ const claimsType = computed<string[]>(() => portfolioStore.parameters.claims_nat
   </template>
 
   <th
+    v-if="!props.hideTotals"
     class="fixWidth header-teal text-red-500 absolute z-10 pt-9 cursor-pointer"
     :style="{
       top: '30px',
@@ -234,6 +238,7 @@ const claimsType = computed<string[]>(() => portfolioStore.parameters.claims_nat
     Paid
   </th>
   <th
+    v-if="!props.hideTotals"
     class="fixWidth header-teal text-red-500 absolute z-10 pt-9 cursor-pointer"
     :style="{
       top: '30px',
@@ -254,6 +259,7 @@ const claimsType = computed<string[]>(() => portfolioStore.parameters.claims_nat
     O/S
   </th>
   <th
+    v-if="!props.hideTotals"
     class="fixWidth header-teal text-red-500 absolute z-10 pt-9 cursor-pointer"
     :style="{
       top: '30px',
@@ -274,7 +280,7 @@ const claimsType = computed<string[]>(() => portfolioStore.parameters.claims_nat
     Incurred
   </th>
   <th
-    v-if="visibleColumns?.includes(3)"
+    v-if="visibleColumns?.includes(3) && !props.hideTotals"
     class="fixWidth header-teal text-red-500 absolute z-10 pt-9 cursor-pointer"
     :style="{
       top: '30px',
@@ -296,7 +302,8 @@ const claimsType = computed<string[]>(() => portfolioStore.parameters.claims_nat
     v-if="
       dashboardStore.underwriting_loss_ratios == 'Written' &&
       dashboardStore.dashboards.uw_acc == 'uw' &&
-      visibleColumns?.includes(3)
+      visibleColumns?.includes(3) &&
+      !props.hideTotals
     "
     class="fixWidth header-teal text-red-500 absolute z-10 pt-9 cursor-pointer"
     :style="{
@@ -316,7 +323,7 @@ const claimsType = computed<string[]>(() => portfolioStore.parameters.claims_nat
     Unearned
   </th>
   <th
-    v-if="visibleColumns?.includes(3)"
+    v-if="visibleColumns?.includes(3) && !props.hideTotals"
     class="fixWidth header-teal text-red-500 absolute z-10 cursor-pointer"
     :class="showColumnTotal ? 'pt-9' : 'pt-5'"
     :style="{
@@ -340,6 +347,7 @@ const claimsType = computed<string[]>(() => portfolioStore.parameters.claims_nat
     Ultimate
   </th>
   <div
+    v-if="!props.hideTotals"
     class="fixWidth absolute z-20 text-red-500 header-teal cursor-pointer"
     :class="showColumnTotal ? 'pt-1' : 'pt-3'"
     style="top: 30px"

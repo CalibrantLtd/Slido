@@ -744,7 +744,8 @@ const replaceMockTableWithRealData = async (mockTable: any, wizardData: any, cur
       portfolioId: element.portfolioId,
       portfolioName: element.portfolioName,
       bounceId: element.bounceId,
-      bounceName: element.bounceName
+      bounceName: element.bounceName,
+      attritionalOnly: element.attritionalOnly
     }
     
     element.isTemplatePlaceholder = false
@@ -755,6 +756,10 @@ const replaceMockTableWithRealData = async (mockTable: any, wizardData: any, cur
     element.portfolioName = currentWizard.wizardInstance.portfolio.name
     element.bounceId = currentWizard.wizardInstance.bounce.id
     element.bounceName = currentWizard.wizardInstance.bounce.displayName || currentWizard.wizardInstance.bounce.name
+    
+    if (template.value?.id === 'title-and-attritional') {
+      element.attritionalOnly = true
+    }
     
     const svgImage = slide.elements.find(e => e.type === 'image' && e.src?.includes('MockTable.svg'))
     if (svgImage) {
@@ -787,6 +792,7 @@ const restoreMockTables = () => {
           element.portfolioName = element._originalMockState.portfolioName
           element.bounceId = element._originalMockState.bounceId
           element.bounceName = element._originalMockState.bounceName
+          element.attritionalOnly = element._originalMockState.attritionalOnly
           
           const svgImage = slide.elements.find(e => e.type === 'image' && e.src?.includes('MockTable.svg'))
           if (svgImage && svgImage._originalVisibility !== undefined) {

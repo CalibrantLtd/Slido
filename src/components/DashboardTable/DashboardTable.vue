@@ -26,6 +26,7 @@ const props = defineProps<{
   overflow: string;
   containerWidth?: number;
   containerHeight?: number;
+  attritionalOnly?: boolean;
 }>();
 const mqy = computed(() => dashboardStore.dashboards.mqy);
 
@@ -40,14 +41,77 @@ const isQuarterSubTotalUp = computed(() => dashboardStore.isQuarterSubTotalUp);
 const isBinderSubTotal = computed(() => dashboardStore.isBinderSubTotal);
 const isBinderSubTotalUp = computed(() => dashboardStore.isBinderSubTotalUp);
 const claimsType = computed<string[]>(() => portfolioStore.parameters.claims_nature);
+const attritionalKey = computed(() => {
+  const list = (portfolioStore.parameters?.claims_nature as string[]) || [];
+  const match = list.find((x) => String(x).toUpperCase() === 'ATTRITIONAL');
+  return match || 'ATTRITIONAL';
+});
 const showColumnTotal = computed(() => dashboardStore.showColumnTotal);
 const totalMargin = computed(() => dashboardStore.totalMargin);
 const showColumn = computed(() => dashboardStore.showColumn);
 const margin = computed(() => dashboardStore.margin);
 
+// Force expansion for ATTRITIONAL when attritionalOnly
+const filteredMargin = computed(() => {
+  if (props.attritionalOnly) {
+    const result: any = { ...dashboardStore.margin };
+    result[attritionalKey.value] = 112; // expanded spacing to show all sub-columns
+    return result;
+  }
+  return dashboardStore.margin;
+});
+
 const leftColumnSize = computed(
   () => 3 + (dashboardStore.isShowingExposure ? portfolioStore.getExposureLength() + 1 : 0)
 );
+
+const filteredLeftColumnSize = computed(() => 
+  props.attritionalOnly ? 1 : leftColumnSize.value
+);
+
+// Filter columns for attritional-only mode
+const filteredShowColumn = computed(() => {
+  if (props.attritionalOnly) {
+    const filtered: any = {};
+    // Only show ATTRITIONAL columns and ensure they are expanded (true)
+    Object.keys(dashboardStore.showColumn).forEach(key => {
+      if (key.toUpperCase() === 'ATTRITIONAL' || key === attritionalKey.value) {
+        filtered[key] = true; // Force expanded state
+      }
+    });
+    // If key wasn't present yet, add by resolved label
+    if (!filtered[attritionalKey.value]) {
+      filtered[attritionalKey.value] = true;
+    }
+    return filtered;
+  }
+  return dashboardStore.showColumn;
+});
+
+const filteredClaimsType = computed(() => {
+  if (props.attritionalOnly) {
+    return [attritionalKey.value];
+  }
+  return portfolioStore.parameters.claims_nature || ['ATTRITIONAL', 'LARGE'];
+});
+
+// Filter visible columns for attritional-only mode
+const filteredVisibleColumns = computed(() => {
+  if (props.attritionalOnly) {
+    return [3];
+  }
+  return dashboardStore.visibleColumns;
+});
+
+// Filter main columns for attritional-only mode (hide GWP, GEP, Commission, CCR, Seasonality)
+const filteredMainColumns = computed(() => {
+  if (props.attritionalOnly) {
+    return [];
+  }
+  return dashboardStore.visibleColumns;
+});
+
+const hideTotals = computed(() => !!props.attritionalOnly);
 
 const tableEl = ref<HTMLElement | null>(null);
 const containerEl = ref<HTMLElement | null>(null);
@@ -60,7 +124,35 @@ const containerHeightPx = ref(0);
 
 function updateNaturalSize() {
   if (tableEl.value) {
-    naturalWidth.value = tableEl.value.scrollWidth || tableEl.value.offsetWidth || 1200;
+    if (props.attritionalOnly) {
+      const periodColumnWidth = 112;
+      const columnWidth = 112; 
+      const baseAttritionalColumns = 5; // Paid, O/S, Incurred, IBNR, Ultimate
+      const hasUnearned = dashboardStore.underwriting_loss_ratios === 'Written' && dashboardStore.dashboards.uw_acc === 'uw';
+      const totalColumns = baseAttritionalColumns + (hasUnearned ? 1 : 0);
+      const calculatedWidth = periodColumnWidth + (totalColumns * columnWidth);
+      
+      naturalWidth.value = calculatedWidth + 5; 
+    } else {
+      let measuredWidth = tableEl.value.scrollWidth || tableEl.value.offsetWidth || 1200;
+
+      try {
+        const tableRect = (tableEl.value as HTMLElement).getBoundingClientRect();
+        const absCells = (tableEl.value as HTMLElement).querySelectorAll('.fixWidth');
+        let maxRight = 0;
+        absCells.forEach((node) => {
+          const rect = (node as HTMLElement).getBoundingClientRect();
+          const right = rect.right - tableRect.left;
+          if (right > maxRight) maxRight = right;
+        });
+        if (maxRight > measuredWidth) {
+          measuredWidth = maxRight + 20; 
+        }
+      } catch {}
+
+      naturalWidth.value = measuredWidth;
+    }
+
     const thead = (tableEl.value as HTMLTableElement).tHead as HTMLElement | null;
     const headerHeight = thead ? thead.offsetHeight : 40;
     const rows = tableEl.value.querySelectorAll('tbody tr');
@@ -70,13 +162,22 @@ function updateNaturalSize() {
       if (h) { rowHeight = h; break; }
     }
     const rowsHeight = rows.length * rowHeight;
-    naturalHeight.value = Math.max(headerHeight + rowsHeight, tableEl.value.scrollHeight || 0);
+    // Add a few pixels of safety to avoid cutting off the last row
+    const safetyPad = 6;
+    naturalHeight.value = Math.max(headerHeight + rowsHeight, tableEl.value.scrollHeight || 0) + safetyPad;
   }
 }
 
 onMounted(async () => {
   await nextTick();
   updateNaturalSize();
+  
+  if (props.attritionalOnly) {
+    setTimeout(() => {
+      updateNaturalSize();
+    }, 100);
+  }
+  
   if ('ResizeObserver' in window) {
     resizeObserver = new ResizeObserver(() => updateNaturalSize());
     if (tableEl.value) resizeObserver.observe(tableEl.value);
@@ -102,14 +203,15 @@ onBeforeUnmount(() => {
   window.removeEventListener('resize', updateNaturalSize);
 });
 
-const FUDGE = 0.995; 
+const FUDGE_X = 0.995;
+const FUDGE_Y = 0.995;
 const scaleX = computed(() => {
   const cw = containerWidthPx.value || props.containerWidth || 1;
-  return (cw / Math.max(naturalWidth.value, 1)) * FUDGE;
+  return (cw / Math.max(naturalWidth.value, 1)) * FUDGE_X;
 });
 const scaleY = computed(() => {
   const ch = containerHeightPx.value || props.containerHeight || 1;
-  return (ch / Math.max(naturalHeight.value, 1)) * FUDGE;
+  return (ch / Math.max(naturalHeight.value, 1)) * FUDGE_Y;
 });
 
 const isScaledDown = computed(() => Math.min(scaleX.value, scaleY.value) < 1);
@@ -211,18 +313,24 @@ function toggleIsExposure() {
             <DashboardHeader
               :total-margin-ccr="totalMarginCCR"
               :total-margin="totalMargin"
-              :margin="margin"
-              :left-column-size="leftColumnSize"
+              :margin="filteredMargin"
+              :left-column-size="filteredLeftColumnSize"
+              :visible-columns="filteredMainColumns"
+              :hide-totals="hideTotals"
+              :claims-type="filteredClaimsType"
               @on-change-ccr-margin="onChangeCcrMargin"
             />
           </tr>
           <tr>
             <UltimatesHeader
-              :margin="margin"
+              :margin="filteredMargin"
               :total-margin="totalMargin"
               :show-column-total="showColumnTotal"
-              :show-column="showColumn"
-              :left-column-size="leftColumnSize"
+              :show-column="filteredShowColumn"
+              :left-column-size="filteredLeftColumnSize"
+              :claims-type="filteredClaimsType"
+              :visible-columns="filteredVisibleColumns"
+              :hide-totals="hideTotals"
               @on-change-total-margin="onChangeTotalMargin"
               @on-change-margin="onChangeMargin"
               @on-change-show-column="onChangeShowColumn"
@@ -230,16 +338,19 @@ function toggleIsExposure() {
             />
           </tr>
         </thead>
-        <tbody v-if="dashboardData && dashboardStore.totalData">
+        <tbody v-if="dashboardData && dashboardStore.totalData && Object.keys(dashboardData).length > 0">
           <template v-for="(n, idx) in dashboardData" :key="idx">
             <tr>
               <ValueRow
                 :row-index="parseInt(idx.toString())"
-                :margin="margin"
-                :show-column="showColumn"
+                :margin="filteredMargin"
+                :show-column="filteredShowColumn"
+                :claims-type="filteredClaimsType"
+                :visible-columns="filteredVisibleColumns"
+                :hide-totals="hideTotals"
                 :show-column-total="showColumnTotal"
                 :total-margin="totalMargin"
-                :left-column-size="leftColumnSize"
+                :left-column-size="filteredLeftColumnSize"
                 :total-margin-ccr="totalMarginCCR"
                 :dashboard-data="dashboardData"
                 :is-total="false"
@@ -259,11 +370,14 @@ function toggleIsExposure() {
             >
               <ValueRow
                 :row-index="parseInt(idx.toString())"
-                :margin="margin"
-                :show-column="showColumn"
+                :margin="filteredMargin"
+                :show-column="filteredShowColumn"
+                :claims-type="filteredClaimsType"
+                :visible-columns="filteredVisibleColumns"
+                :hide-totals="hideTotals"
                 :show-column-total="showColumnTotal"
                 :total-margin="totalMargin"
-                :left-column-size="leftColumnSize"
+                :left-column-size="filteredLeftColumnSize"
                 :total-margin-ccr="totalMarginCCR"
                 :dashboard-data="binderDashboardData"
                 :is-total="true"
@@ -275,11 +389,14 @@ function toggleIsExposure() {
             <tr v-if="quarterDashboardData[idx] && isQuarterSubTotal && isQuarterSubTotalUp && mqy == 'month'">
               <ValueRow
                 :row-index="parseInt(idx.toString())"
-                :margin="margin"
-                :show-column="showColumn"
+                :margin="filteredMargin"
+                :show-column="filteredShowColumn"
+                :claims-type="filteredClaimsType"
+                :visible-columns="filteredVisibleColumns"
+                :hide-totals="hideTotals"
                 :show-column-total="showColumnTotal"
                 :total-margin="totalMargin"
-                :left-column-size="leftColumnSize"
+                :left-column-size="filteredLeftColumnSize"
                 :total-margin-ccr="totalMarginCCR"
                 :dashboard-data="quarterDashboardData"
                 :is-total="true"
@@ -291,11 +408,14 @@ function toggleIsExposure() {
             <tr v-if="yearDashboardData[idx] && isYearSubTotal && isYearSubTotalUp && mqy != 'year'">
               <ValueRow
                 :row-index="parseInt(idx.toString())"
-                :margin="margin"
-                :show-column="showColumn"
+                :margin="filteredMargin"
+                :show-column="filteredShowColumn"
+                :claims-type="filteredClaimsType"
+                :visible-columns="filteredVisibleColumns"
+                :hide-totals="hideTotals"
                 :show-column-total="showColumnTotal"
                 :total-margin="totalMargin"
-                :left-column-size="leftColumnSize"
+                :left-column-size="filteredLeftColumnSize"
                 :total-margin-ccr="totalMarginCCR"
                 :dashboard-data="yearDashboardData"
                 :is-total="true"
@@ -309,11 +429,14 @@ function toggleIsExposure() {
             <tr v-for="(n, idx) in quarterDashboardData" :key="idx">
               <ValueRow
                 :row-index="parseInt(idx.toString())"
-                :margin="margin"
-                :show-column="showColumn"
+                :margin="filteredMargin"
+                :show-column="filteredShowColumn"
+                :claims-type="filteredClaimsType"
+                :visible-columns="filteredVisibleColumns"
+                :hide-totals="hideTotals"
                 :show-column-total="showColumnTotal"
                 :total-margin="totalMargin"
-                :left-column-size="leftColumnSize"
+                :left-column-size="filteredLeftColumnSize"
                 :total-margin-ccr="totalMarginCCR"
                 :dashboard-data="quarterDashboardData"
                 :is-total="true"
@@ -329,11 +452,14 @@ function toggleIsExposure() {
             <tr v-for="(n, idx) in binderDashboardData" :key="idx">
               <ValueRow
                 :row-index="parseInt(idx.toString())"
-                :margin="margin"
-                :show-column="showColumn"
+                :margin="filteredMargin"
+                :show-column="filteredShowColumn"
+                :claims-type="filteredClaimsType"
+                :visible-columns="filteredVisibleColumns"
+                :hide-totals="hideTotals"
                 :show-column-total="showColumnTotal"
                 :total-margin="totalMargin"
-                :left-column-size="leftColumnSize"
+                :left-column-size="filteredLeftColumnSize"
                 :total-margin-ccr="totalMarginCCR"
                 :dashboard-data="binderDashboardData"
                 :is-total="true"
@@ -347,11 +473,14 @@ function toggleIsExposure() {
             <tr v-for="(n, idx) in yearDashboardData" :key="idx">
               <ValueRow
                 :row-index="parseInt(idx.toString())"
-                :margin="margin"
-                :show-column="showColumn"
+                :margin="filteredMargin"
+                :show-column="filteredShowColumn"
+                :claims-type="filteredClaimsType"
+                :visible-columns="filteredVisibleColumns"
+                :hide-totals="hideTotals"
                 :show-column-total="showColumnTotal"
                 :total-margin="totalMargin"
-                :left-column-size="leftColumnSize"
+                :left-column-size="filteredLeftColumnSize"
                 :total-margin-ccr="totalMarginCCR"
                 :dashboard-data="yearDashboardData"
                 :is-total="true"
@@ -364,11 +493,14 @@ function toggleIsExposure() {
           <tr :class="['bg-gray-300', 'total-row', isScaledDown ? '' : 'sticky z-30 bottom-0']">
             <ValueRow
               :row-index="0"
-              :margin="margin"
-              :show-column="showColumn"
+              :margin="filteredMargin"
+              :show-column="filteredShowColumn"
+              :claims-type="filteredClaimsType"
+              :visible-columns="filteredVisibleColumns"
+              :hide-totals="hideTotals"
               :show-column-total="showColumnTotal"
               :total-margin="totalMargin"
-              :left-column-size="leftColumnSize"
+              :left-column-size="filteredLeftColumnSize"
               :total-margin-ccr="totalMarginCCR"
               :dashboard-data="totalDashboardData"
               :is-total="true"
@@ -379,9 +511,9 @@ function toggleIsExposure() {
           </tr>
         </tbody>
         <tbody v-else>
-          <tr v-for="i in Array(50).fill('')" :key="i">
-            <td v-for="j in Array(20).fill('')" :key="i * j">
-              <div class="skeleton-placeholder" style="width: 100%; height: 20px; background: #f0f0f0; border-radius: 4px;"></div>
+          <tr>
+            <td colspan="10" style="text-align: center; padding: 20px;">
+              {{ !dashboardData ? 'No dashboard data' : !dashboardStore.totalData ? 'No total data' : 'No data rows' }}
             </td>
           </tr>
         </tbody>

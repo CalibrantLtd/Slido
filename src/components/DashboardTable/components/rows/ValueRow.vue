@@ -14,11 +14,11 @@ import generateRandomKey from '@/utils/generateRandomKey';
 const dashboardStore = useDashboardStore();
 const portfolioStore = usePortfolioStore();
 
-const visibleColumns = computed(() => dashboardStore.visibleColumns);
+const visibleColumns = computed(() => props.visibleColumns || dashboardStore.visibleColumns);
 const ratioAmount = computed(() => dashboardStore.dashboards.ratio_amount);
 const isBindedYears = computed<boolean>(() => dashboardStore.isBindedYears);
 const dashboardDataColumn = computed(() => dashboardStore.dashboard_data_column);
-const claimsType = computed<string[]>(() => portfolioStore.parameters.claims_nature || ['ATTRITIONAL', 'LARGE']);
+const claimsType = computed<string[]>(() => props.claimsType || portfolioStore.parameters.claims_nature || ['ATTRITIONAL', 'LARGE']);
 const maxSeasonality = computed(
   () => dashboardStore.seasonality_parameters?.map((x) => Math.max(...x.map((y) => Math.abs(1 - y))))
 );
@@ -37,6 +37,9 @@ const props = withDefaults(
     isTotalRow: boolean;
     leftColumnSize: number;
     mqy: string;
+    claimsType?: string[];
+    visibleColumns?: number[];
+    hideTotals?: boolean;
   }>(),
   { isTotal: false, rowIndex: 0 }
 );
@@ -298,7 +301,7 @@ watch(
         dashboardStore.dashboards.uw_acc == 'uw' &&
         visibleColumns?.includes(3)
       "
-      class="fixWidth text-red-500 bg-red-50 absolute z-10"
+      class="fixWidth text-red-500 bg-gray-50 absolute z-10"
       :class="{
         [rowClass]: true,
       }"
@@ -405,6 +408,7 @@ watch(
       transition: '0.5s ease-out all',
       transform: 'translateX(' + totalMargin * 0 + 'px)',
     }"
+    v-if="!props.hideTotals"
   >
     {{
       numberWithCommasOrRatios(
@@ -429,6 +433,7 @@ watch(
       transition: '0.5s ease-out all',
       transform: 'translateX(' + totalMargin * 1 + 'px)',
     }"
+    v-if="!props.hideTotals"
   >
     {{
       numberWithCommasOrRatios(
@@ -453,6 +458,7 @@ watch(
       transition: '0.5s ease-out all',
       transform: 'translateX(' + totalMargin * 2 + 'px)',
     }"
+    v-if="!props.hideTotals"
   >
     {{
       numberWithCommasOrRatios(
@@ -463,7 +469,7 @@ watch(
     }}
   </td>
   <td
-    v-if="visibleColumns?.includes(3)"
+    v-if="visibleColumns?.includes(3) && !props.hideTotals"
     class="fixWidth text-red-500 bg-gray-50 absolute z-10"
     :class="{ [rowClass]: true }"
     :style="{
@@ -491,7 +497,8 @@ watch(
     v-if="
       dashboardStore.underwriting_loss_ratios == 'Written' &&
       dashboardStore.dashboards.uw_acc == 'uw' &&
-      visibleColumns?.includes(3)
+      visibleColumns?.includes(3) &&
+      !props.hideTotals
     "
     class="fixWidth text-red-500 bg-red-50 absolute z-10"
     :class="{ [rowClass]: true }"
@@ -522,7 +529,7 @@ watch(
     }}
   </td>
   <td
-    v-if="visibleColumns?.includes(3)"
+    v-if="visibleColumns?.includes(3) && !props.hideTotals"
     class="fixWidth text-red-500 bg-white absolute z-10"
     :class="{ [rowClass]: true }"
     :style="{
@@ -596,7 +603,7 @@ watch(
     }}
   </td>
   <td
-    v-if="visibleColumns?.includes(3)"
+    v-if="visibleColumns?.includes(3) && !props.hideTotals"
     data-testid="ccr-nlr"
     class="fixWidth bg-white absolute z-10"
     :class="{ [rowClass]: true }"
@@ -629,7 +636,7 @@ watch(
     }}
   </td>
   <td
-    v-if="visibleColumns?.includes(3)"
+    v-if="visibleColumns?.includes(3) && !props.hideTotals"
     class="fixWidth bg-white text-orange-900 absolute z-10"
     :class="{ [rowClass]: true }"
     :style="{
@@ -663,7 +670,7 @@ watch(
     }}
   </td>
   <td
-    v-if="visibleColumns?.includes(5)"
+    v-if="visibleColumns?.includes(5) && !props.hideTotals"
     data-testid="seas-adj-ccr-nlr"
     class="fixWidth bg-white absolute z-10"
     :class="{ [rowClass]: true }"
