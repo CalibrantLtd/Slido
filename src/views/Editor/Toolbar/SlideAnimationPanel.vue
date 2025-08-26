@@ -95,7 +95,7 @@ const applyAllSlide = () => {
   overflow: hidden;
 
   @mixin elAnimation($animationType) {
-    content: 'Slido.ai';
+    content: 'Sybil Reporting';
     width: 100%;
     height: 100%;
     position: absolute;

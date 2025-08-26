@@ -1,7 +1,6 @@
 <template>
   <div class="editor-header">
     <div class="left">
-      <div class="font-bold ml-2">Slido.ai</div>
     </div>
 
     <div class="right">

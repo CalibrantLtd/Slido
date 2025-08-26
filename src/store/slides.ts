@@ -31,9 +31,9 @@ export interface SlidesState {
 
 export const useSlidesStore = defineStore('slides', {
   state: (): SlidesState => ({
-    title: 'Untitled Presentation', // Slide title
+    title: 'Untitled Report', // Slide title
     theme: {
-      themeColor: '#5b9bd5',
+      themeColor: '#55B691',
       fontColor: '#333',
       fontName: '',
       backgroundColor: '#fff',
@@ -125,7 +125,7 @@ export const useSlidesStore = defineStore('slides', {
 
   actions: {
     setTitle(title: string) {
-      if (!title) this.title = 'Untitled Presentation'
+      if (!title) this.title = 'Untitled Report'
       else this.title = title
     },
 

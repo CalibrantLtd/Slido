@@ -10,7 +10,7 @@ export const PRESET_THEMES: PresetTheme[] = [
     background: '#ffffff',
     fontColor: '#333333',
     fontname: '',
-    colors: ['#5b9bd5', '#ed7d31', '#a5a5a5', '#ffc000', '#4472c4', '#70ad47'],
+    colors: ['#55B691', '#ed7d31', '#a5a5a5', '#ffc000', '#4472c4', '#70ad47'],
   },
   {
     background: '#ffffff',

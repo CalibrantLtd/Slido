@@ -14,13 +14,6 @@ export default defineConfig({
   server: {
     port: 3000,
     host: 'slido.sybil.localhost', 
-    proxy: {
-      '/api': {
-        target: process.env.VITE_API_URL || 'https://server.pptist.cn',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
-      }
-    }
   },
   css: {
     postcss: {

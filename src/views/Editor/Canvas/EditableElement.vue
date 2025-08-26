@@ -40,6 +40,7 @@ import TableElement from '@/views/components/element/TableElement/index.vue'
 import LatexElement from '@/views/components/element/LatexElement/index.vue'
 import VideoElement from '@/views/components/element/VideoElement/index.vue'
 import AudioElement from '@/views/components/element/AudioElement/index.vue'
+import DashboardTableElement from '@/views/components/element/DashboardTableElement/index.vue'
 
 const props = defineProps<{
   elementInfo: PPTElement
@@ -60,6 +61,7 @@ const currentElementComponent = computed<unknown>(() => {
     [ElementTypes.LATEX]: LatexElement,
     [ElementTypes.VIDEO]: VideoElement,
     [ElementTypes.AUDIO]: AudioElement,
+    [ElementTypes.DASHBOARD_TABLE]: DashboardTableElement,
   }
   return elementTypeMap[props.elementInfo.type] || null
 })

@@ -92,11 +92,12 @@
 <script lang="ts" setup>
 import { nextTick, ref } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useMainStore, useSnapshotStore, useSlidesStore } from '@/store'
+import { useMainStore, useSnapshotStore, useSlidesStore, useDashboardStore } from '@/store'
 import { getImageDataURL } from '@/utils/image'
 import type { ShapePoolItem } from '@/configs/shapes'
 import type { LinePoolItem } from '@/configs/lines'
 import type { SybilObjectItem } from './SybilPool.vue'
+import { ElementTypes } from '@/types/slides'
 import useHistorySnapshot from '@/hooks/useHistorySnapshot'
 import useCreateElement from '@/hooks/useCreateElement'
 import { nanoid } from 'nanoid'
@@ -698,6 +699,8 @@ const handleWizardFinish = (data: any) => {
     createComparisonTreemap(data)
   } else if (data.wizardType === 'triangulation') {
     createTriangulation(data)
+  } else if (data.wizardType === 'dashboard-table') {
+    createDashboardTable(data)
   }
   // Add other wizard types here as needed
   
@@ -927,6 +930,73 @@ const createComparisonTableWithData = (tableData: string[][]) => {
   }
   
   slidesStore.addElement(element)
+}
+
+// Create dashboard table element with filters
+const createDashboardTable = async (wizardData: any) => {
+  try {
+    // Get the filter data from wizard
+    const dashboardFilters = wizardData.dashboardFilters || {}
+    const columnConfig = wizardData.columnConfig || {}
+    const selectedFilters = dashboardFilters.selectedFilters || {}
+    const accidentUnderwriting = dashboardFilters.accidentUnderwriting || 'uw'
+    
+    // Create dashboard table element
+    const element = {
+      type: 'dashboard-table' as const,
+      id: nanoid(10),
+      width: 800,
+      height: 600,
+      rotate: 0,
+      left: (1920 - 800) / 2,
+      top: (1080 - 600) / 2,
+      selectedFilters,
+      accidentUnderwriting,
+      columnConfig
+    } as any
+    
+
+    slidesStore.addElement(element)
+    
+    // Load dashboard data with the selected filters
+    const dashboardStore = useDashboardStore()
+    
+    // Get portfolio data from storage
+    const portfolioData = dashboardStore.getCurrentPortfolioFromStorage()
+    if (!portfolioData) {
+      throw new Error('No portfolio data available. Please ensure you have selected a portfolio in the main app.')
+    }
+    
+    // Apply wizard-selected filters to dashboard store
+    dashboardStore.setPortfolioData(portfolioData)
+    
+    // Apply each filter category individually
+    for (const [category, selections] of Object.entries(selectedFilters)) {
+      dashboardStore.setFilterSelection(category, selections as string[])
+    }
+    
+    dashboardStore.setAccidentUnderwriting(accidentUnderwriting)
+    
+    // Apply column configuration if provided
+    if (columnConfig.showColumn) {
+      // Apply the column state to the dashboard store
+      // This will make the table display with the configured column states
+      dashboardStore.setColumnState({
+        showColumn: columnConfig.showColumn,
+        margin: columnConfig.margin,
+        showColumnTotal: columnConfig.showColumnTotal,
+        totalMargin: columnConfig.totalMargin
+      })
+    }
+    
+    // Load dashboard data
+    await dashboardStore.loadDashboard(portfolioData)
+    
+
+  } catch (error) {
+    console.error('🔍 SLIDO - Error creating dashboard table:', error)
+    // You might want to show an error message to the user here
+  }
 }
 
 </script>

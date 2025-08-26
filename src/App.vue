@@ -2,7 +2,6 @@
   <template v-if="slides.length">
     <Screen v-if="screening" />
     <template v-else-if="_isPC">
-      <EditorHeader />
       <Editor />
     </template>
     <Mobile v-else />
@@ -23,7 +22,6 @@ import api from '@/services'
 import Editor from './views/Editor/index.vue'
 import Screen from './views/Screen/index.vue'
 import Mobile from './views/Mobile/index.vue'
-import EditorHeader from './views/Editor/EditorHeader/index.vue'
 import FullscreenSpin from '@/components/FullscreenSpin.vue'
 
 const _isPC = isPC()

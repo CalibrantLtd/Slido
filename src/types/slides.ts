@@ -30,6 +30,7 @@ export const enum ElementTypes {
   LATEX = 'latex',
   VIDEO = 'video',
   AUDIO = 'audio',
+  DASHBOARD_TABLE = 'dashboard-table',
 }
 
 /**
@@ -760,3 +761,4 @@ export interface SlideTheme {
   outline: PPTElementOutline
   shadow: PPTElementShadow
 }
+

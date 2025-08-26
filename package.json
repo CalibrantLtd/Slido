@@ -13,6 +13,7 @@
     "prepare": "husky install"
   },
   "dependencies": {
+    "@element-plus/icons-vue": "^2.3.2",
     "@heroicons/vue": "^2.2.0",
     "@icon-park/vue-next": "^1.4.2",
     "animate.css": "^4.1.1",
@@ -21,11 +22,13 @@
     "crypto-js": "^4.2.0",
     "dexie": "3.0.3",
     "echarts": "^5.5.1",
+    "element-plus": "^2.11.2",
     "file-saver": "^2.0.5",
     "hfmath": "^0.0.2",
     "html-to-image": "^1.11.11",
     "lodash": "^4.17.21",
     "mitt": "^3.0.1",
+    "moment": "^2.30.1",
     "nanoid": "^5.0.7",
     "number-precision": "^1.6.0",
     "oh-vue-icons": "^1.0.0-rc3",
