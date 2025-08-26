@@ -62,9 +62,17 @@
 
     </div>
 
-    <div class="right-handler">
-     
-    </div>
+      <div class="right-handler">
+        <button 
+          v-if="isEditingTemplate" 
+          @click="goBackToTemplate" 
+          class="handler-item back-to-template-btn"
+          v-tooltip="'Back to Template Preview'"
+        >
+          ← Back
+        </button>
+        <IconEdit class="handler-item" v-tooltip="'Save Template'" @click="createTemplate()" />
+      </div>
 
     <Modal
       v-model:visible="latexEditorVisible" 
@@ -82,15 +90,53 @@
     >
       <SybilWizard
         :wizardType="selectedSybilType"
+        :portfolio="selectedPortfolio"
+        :bounce="selectedBounce"
         @close="sybilWizardVisible = false"
         @finish="handleWizardFinish"
       />
     </Modal>
+
+    <PortfolioBounceSelectionModal
+      :visible="portfolioBounceModalVisible"
+      :portfolios-data="portfoliosData"
+      context="editor"
+      @close="onPortfolioBounceModalClose"
+      @confirm="onPortfolioBounceConfirm"
+    />
+
+    <Modal
+      v-model:visible="templateCreatorVisible"
+      :width="500"
+    >
+        <TemplateCreatorModal
+          :templateName="templateName"
+          :isEditing="isEditingTemplate"
+          @close="templateCreatorVisible = false"
+          @save="handleTemplateSave"
+        />
+    </Modal>
+    
+    <!-- Error Modal -->
+    <div v-if="errorModal.visible" class="error-modal-overlay" @click="closeErrorModal">
+      <div class="error-modal-content" @click.stop>
+        <div class="error-modal-header">
+          <h3>Error</h3>
+        </div>
+        <div class="error-modal-body">
+          <p>{{ errorModal.message }}</p>
+        </div>
+        <div class="error-modal-footer">
+          <button @click="closeErrorModal" class="error-btn primary">OK</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { nextTick, ref } from 'vue'
+import { nextTick, ref, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useMainStore, useSnapshotStore, useSlidesStore, useDashboardStore } from '@/store'
 import { getImageDataURL } from '@/utils/image'
@@ -109,11 +155,18 @@ import TableGenerator from './TableGenerator.vue'
 import SybilPool from './SybilPool.vue'
 import SybilWizard from './SybilWizard.vue'
 import LaTeXEditor from '@/components/LaTeXEditor/index.vue'
+import TemplateCreatorModal from '@/components/TemplateCreator/TemplateCreatorModal.vue'
 import FileInput from '@/components/FileInput.vue'
+import { templateService } from '@/services/templateService'
 import Modal from '@/components/Modal.vue'
 import Popover from '@/components/Popover.vue'
 import PopoverMenuItem from '@/components/PopoverMenuItem.vue'
+import PortfolioBounceSelectionModal from '@/components/PortfolioBounceSelectionModal.vue'
+import { portfolioService } from '@/services/portfolioService'
+import { useGlobalStore } from '@/stores/global'
 
+const route = useRoute()
+const router = useRouter()
 const mainStore = useMainStore()
 const slidesStore = useSlidesStore()
 const { title } = storeToRefs(slidesStore)
@@ -145,6 +198,31 @@ const shapeMenuVisible = ref(false)
 const sybilPoolVisible = ref(false)
 const sybilWizardVisible = ref(false)
 const selectedSybilType = ref('')
+const templateCreatorVisible = ref(false)
+const templateName = ref('')
+const editingTemplateId = ref<string | null>(null)
+const isEditingTemplate = ref(false)
+
+// Portfolio/Bounce selection for dashboard table loaded
+const portfolioBounceModalVisible = ref(false)
+const selectedPortfolio = ref<any>(null)
+const selectedBounce = ref<any>(null)
+const portfoliosData = ref<any>(null)
+const globalStore = useGlobalStore()
+
+const errorModal = ref({
+  visible: false,
+  message: ''
+})
+
+const showErrorModal = (message: string) => {
+  errorModal.value.message = message
+  errorModal.value.visible = true
+}
+
+const closeErrorModal = () => {
+  errorModal.value.visible = false
+}
 
 // Draw text area
 const drawText = (vertical = false) => {
@@ -179,8 +257,96 @@ const drawLine = (line: LinePoolItem) => {
 
 // Handle Sybil object selection
 const handleSybilObjectSelect = (sybilObject: SybilObjectItem) => {
-  selectedSybilType.value = sybilObject.type
+  if (sybilObject.type === 'dashboard-table') {
+    // Create a template placeholder dashboard table without wizard
+    createTemplateDashboardTable()
+  } else if (sybilObject.type === 'dashboard-table-loaded') {
+    showPortfolioBounceSelection()
+  } else {
+    selectedSybilType.value = sybilObject.type
+    sybilWizardVisible.value = true
+  }
+}
+
+// Create template dashboard table (placeholder without wizard)
+const createTemplateDashboardTable = () => {
+  const element = {
+    type: 'dashboard-table' as const,
+    id: nanoid(10),
+    width: 800,
+    height: 600,
+    rotate: 0,
+    left: (1920 - 800) / 2,
+    top: (1080 - 600) / 2,
+    isTemplatePlaceholder: true, // Mark as template placeholder
+    selectedFilters: null, 
+    accidentUnderwriting: null,
+    columnConfig: null
+  } as any
+
+  slidesStore.addElement(element)
+}
+
+const showPortfolioBounceSelection = async () => {
+  try {
+    globalStore.setLoading(true)
+    const response = await portfolioService.fetchPortfolios()
+    portfoliosData.value = response
+    portfolioBounceModalVisible.value = true
+    setTimeout(() => {
+      globalStore.setLoading(false)
+    }, 50)
+  } catch (error) {
+    globalStore.setLoading(false)
+    showErrorModal('Failed to load portfolios. Please try again.')
+  }
+}
+
+const onPortfolioBounceConfirm = (portfolio: any, bounce: any) => {
+  selectedPortfolio.value = portfolio
+  selectedBounce.value = bounce
+  portfolioBounceModalVisible.value = false
+  
+  selectedSybilType.value = 'dashboard-table-loaded'
   sybilWizardVisible.value = true
+}
+
+const onPortfolioBounceModalClose = () => {
+  portfolioBounceModalVisible.value = false
+}
+
+const createTemplate = () => {
+  if (!isEditingTemplate.value) {
+    templateName.value = ''
+  }
+  templateCreatorVisible.value = true
+}
+
+const goBackToTemplate = () => {
+  if (editingTemplateId.value) {
+    router.push(`/template/${editingTemplateId.value}`)
+  }
+}
+
+const saveTemplate = async () => {
+  const templateData = {
+    name: templateName.value,
+    slides: slidesStore.slides
+  }
+  
+  if (isEditingTemplate.value && editingTemplateId.value) {
+    // Update existing template
+    await templateService.updateTemplate(editingTemplateId.value, templateData)
+  } else {
+    // Create new template
+    await templateService.saveTemplate(templateData)
+    }
+}
+
+const handleTemplateSave = async (data: { name: string}) => {
+  templateName.value = data.name
+  templateCreatorVisible.value = false  
+  await saveTemplate()  
 }
 
 // Create performance table with dummy data
@@ -683,9 +849,7 @@ const createTriangulationTableWithData = (tableData: string[][], isTriangular: b
 }
 
 // Handle wizard finish
-const handleWizardFinish = (data: any) => {
-  console.log('Wizard finished:', data)
-  
+const handleWizardFinish = (data: any) => {  
   // Create appropriate element based on wizard type
   if (data.wizardType === 'performance-table') {
     createPerformanceTable(data)
@@ -701,6 +865,8 @@ const handleWizardFinish = (data: any) => {
     createTriangulation(data)
   } else if (data.wizardType === 'dashboard-table') {
     createDashboardTable(data)
+  } else if (data.wizardType === 'dashboard-table-loaded') {
+    createDashboardTableLoaded(data)
   }
   // Add other wizard types here as needed
   
@@ -995,9 +1161,93 @@ const createDashboardTable = async (wizardData: any) => {
 
   } catch (error) {
     console.error('🔍 SLIDO - Error creating dashboard table:', error)
-    // You might want to show an error message to the user here
   }
 }
+
+const createDashboardTableLoaded = async (wizardData: any) => {
+  try {
+    const dashboardFilters = wizardData.dashboardFilters || {}
+    const columnConfig = wizardData.columnConfig || {}
+    const selectedFilters = dashboardFilters.selectedFilters || {}
+    const accidentUnderwriting = dashboardFilters.accidentUnderwriting || 'uw'
+    
+    const element = {
+      type: 'dashboard-table' as const,
+      id: nanoid(10),
+      width: 800,
+      height: 600,
+      rotate: 0,
+      left: (1920 - 800) / 2,
+      top: (1080 - 600) / 2,
+      selectedFilters,
+      accidentUnderwriting,
+      columnConfig,
+      portfolioId: selectedPortfolio.value.id,
+      portfolioName: selectedPortfolio.value.name,
+      bounceId: selectedBounce.value.id,
+      bounceName: selectedBounce.value.displayName || selectedBounce.value.name
+    } as any
+    
+    slidesStore.addElement(element)
+    
+    const dashboardStore = useDashboardStore()
+    
+    const completeData = await portfolioService.fetchCompletePortfolioData(
+      selectedPortfolio.value.id, 
+      selectedBounce.value.id || selectedBounce.value.nodeID
+    )
+        const bounceName = selectedBounce.value.displayName || selectedBounce.value.name
+    completeData.portfolioName = selectedPortfolio.value.name
+    completeData.bounceName = bounceName.slice(26) || bounceName.slice(25)
+    completeData.bounceDate = bounceName.slice(0, 6)
+    completeData.bounceFullName = bounceName
+    
+    dashboardStore.setPortfolioData(completeData)
+    
+    for (const [category, selections] of Object.entries(selectedFilters)) {
+      dashboardStore.setFilterSelection(category, selections as string[])
+    }
+    
+    dashboardStore.setAccidentUnderwriting(accidentUnderwriting)
+    
+    if (columnConfig.showColumn) {
+      dashboardStore.setColumnState({
+        showColumn: columnConfig.showColumn,
+        margin: columnConfig.margin,
+        showColumnTotal: columnConfig.showColumnTotal,
+        totalMargin: columnConfig.totalMargin
+      })
+    }
+    
+    await dashboardStore.loadDashboard(completeData)
+    
+  } catch (error) {
+    console.error('❌ Error creating dashboard table loaded:', error)
+    showErrorModal('Failed to load dashboard table. Please try again.')
+  }
+}
+
+// Handle template editing mode
+onMounted(async () => {
+  const templateId = route.query.templateId as string
+  const mode = route.query.mode as string
+  
+  if (templateId && mode === 'edit') {
+    isEditingTemplate.value = true
+    editingTemplateId.value = templateId
+    
+    try {
+      // Load the template data
+      const template = await templateService.loadTemplate(templateId)
+      if (template) {
+        slidesStore.setSlides(template.slides)
+        templateName.value = template.name
+      }
+    } catch (error) {
+      console.error('❌ Failed to load template for editing:', error)
+    }
+  }
+})
 
 </script>
 
@@ -1161,4 +1411,97 @@ const createDashboardTable = async (wizardData: any) => {
   }
 }
 
+.back-to-template-btn {
+  background: #f8fafc;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-right: 8px;
+}
+
+.back-to-template-btn:hover {
+  background: #f1f5f9;
+  color: #475569;
+  border-color: #cbd5e1;
+}
+
+/* Error Modal Styles */
+.error-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1002;
+}
+
+.error-modal-content {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  max-width: 400px;
+  width: 90%;
+  max-height: 90vh;
+  overflow: hidden;
+}
+
+.error-modal-header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.error-modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.error-modal-body {
+  padding: 20px 24px;
+}
+
+.error-modal-body p {
+  margin: 0;
+  color: #374151;
+  line-height: 1.5;
+}
+
+.error-modal-footer {
+  padding: 16px 24px 20px;
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  border-top: 1px solid #e5e7eb;
+}
+
+.error-btn {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.error-btn.primary {
+  background: #55B691;
+  color: white;
+  border-color: #55B691;
+}
+
+.error-btn.primary:hover {
+  background: #4a9d7a;
+  border-color: #4a9d7a;
+}
 </style>

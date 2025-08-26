@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="300" viewBox="0 0 900 300" preserveAspectRatio="none" style="font-family:Arial, sans-serif; font-size:12px;">
+  <!-- Header Row -->
+  <rect x="0" y="0" width="900" height="40" fill="#cbe3d4"/>
+  <text x="10" y="25" font-weight="bold">Period</text>
+  <text x="90" y="25" fill="#3a7c59">GWP</text>
+  <text x="160" y="25" fill="#3a7c59">GEP</text>
+  <text x="330" y="20" font-weight="bold" fill="red">Earned Loss Ratios</text>
+  <text x="245" y="35" fill="red">Attritional</text>
+  <text x="340" y="35" fill="red">Large</text>
+  <text x="420" y="35" fill="red">Total</text>
+  <text x="500" y="25" fill="blue">Comm.</text>
+  <text x="570" y="25" font-weight="bold">Earned CCR</text>
+  <text x="680" y="15" font-weight="bold" fill="#8b5e3c">Large</text>
+  <text x="660" y="35" fill="#8b5e3c">Norm. Earned CCR</text>
+  <text x="820" y="25" font-weight="bold">No Seas. Adj.</text>
+  <text x="820" y="38" font-weight="bold">A-priori CCR</text>
+  
+  <!-- Rows -->
+  <g fill="black">
+         <!-- Row template -->
+           <g id="row">
+            <rect x="0" y="40" width="900" height="25" fill="#fff" stroke="#ccc"/>
+      <text x="10" y="58">X</text>
+      <text x="95" y="58">0</text>
+      <text x="165" y="58">0</text>
+      <text x="265" y="58" fill="red">0</text>
+      <text x="345" y="58" fill="red">0</text>
+      <text x="425" y="58" fill="red">0</text>
+      <text x="505" y="58" fill="blue">0</text>
+      <text x="590" y="58">0</text>
+      <text x="690" y="58" fill="#8b5e3c">0</text>
+      <text x="840" y="58">0</text>
+    </g>
+  </g>
+  
+  <!-- Repeat rows -->
+  <use href="#row" y="0"/>
+  <use href="#row" y="25"/>
+  <use href="#row" y="50"/>
+  <use href="#row" y="75"/>
+  <use href="#row" y="100"/>
+  <use href="#row" y="125"/>
+  <use href="#row" y="150"/>
+  <use href="#row" y="175"/>
+  
+         <!-- Total row -->
+        <rect x="0" y="240" width="900" height="25" fill="#cbe3d4"/>
+  <text x="10" y="258" font-weight="bold">Total</text>
+  <text x="95" y="258">0</text>
+  <text x="165" y="258">0</text>
+  <text x="265" y="258">0</text>
+  <text x="345" y="258">0</text>
+  <text x="425" y="258">0</text>
+  <text x="505" y="258">0</text>
+  <text x="590" y="258">0</text>
+  <text x="690" y="258">0</text>
+  <text x="840" y="258">0</text>
+</svg>

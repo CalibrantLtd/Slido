@@ -8,9 +8,11 @@
         :key="slide.id"
       >
         <ThumbnailSlide class="thumbnail" :slide="slide" :size="180" />
+        
+        <div class="template-name">{{ slide.name || 'Template' }}</div>
 
         <div class="btns">
-          <Button class="btn" type="primary" size="small" @click="insertTemplate(slide)">Insert Template</Button>
+          <Button class="btn" size="small" @click="insertTemplate(slide)">Insert Template</Button>
         </div>
       </div>
     </div>
@@ -70,7 +72,7 @@ const insertTemplate = (slide: Slide) => {
   }
 
   &:hover .thumbnail {
-    outline-color: $themeColor;
+    outline-color: transparent;
   }
 
   .btns {
@@ -90,6 +92,26 @@ const insertTemplate = (slide: Slide) => {
     transition: outline $transitionDelay;
     border-radius: $borderRadius;
     cursor: pointer;
+  }
+
+  .template-name {
+    font-size: 12px;
+    color: #666;
+    text-align: center;
+    margin-top: 4px;
+    padding: 0 4px;
+    @include ellipsis-oneline();
+  }
+
+  .btn {
+    background-color: $themeColor;
+    color: white;
+    border: none;
+    
+    &:hover {
+      background-color: $themeHoverColor;
+      color: white;
+    }
   }
 }
 </style>

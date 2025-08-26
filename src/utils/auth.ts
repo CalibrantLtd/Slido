@@ -1,3 +1,4 @@
+//This file isnt used anymore but keep it for future
 export class SlidoAuthService {
   private static getDomain() {
     if (import.meta.env.DEV) {

@@ -1,417 +1,684 @@
 [
   {
-    "id": "template",
+    "id": "title-slide",
+    "name": "Title Slide",
     "elements": [
       {
-        "type": "shape",
-        "id": "4cbRxp",
-        "left": 0,
-        "top": 200,
-        "width": 546,
-        "height": 362.5,
-        "viewBox": [200, 200],
-        "path": "M 0 0 L 0 200 L 200 200 Z",
-        "fill": "{{themeColor}}",
-        "fixedRatio": false,
-        "opacity": 0.7,
-        "rotate": 0
+        "type": "text",
+        "id": "title-text",
+        "left": 100,
+        "top": 150,
+        "width": 800,
+        "height": 100,
+        "content": "<p style='text-align: left;'><span style='color: #55B691; font-size: 48px; font-weight: bold; opacity: 0.5;'>ADD PRESENTATION TITLE</span></p>",
+        "rotate": 0,
+        "defaultFontName": "{{fontName}}",
+        "defaultColor": "#55B691"
       },
       {
-        "type": "shape",
-        "id": "ookHrf",
-        "left": 0,
-        "top": 0,
+        "type": "text",
+        "id": "presenter-text",
+        "left": 100,
+        "top": 360,
+        "width": 800,
+        "height": 50,
+        "content": "<p style='text-align: left;'><span style='color: #ffffff; font-size: 24px; opacity: 0.5;'>Add presenter name here...</span></p>",
+        "rotate": 0,
+        "defaultFontName": "{{fontName}}",
+        "defaultColor": "#ffffff"
+      },
+      {
+        "type": "text",
+        "id": "website-text",
+        "left": 100,
+        "top": 400,
+        "width": 200,
+        "height": 30,
+        "content": "<p style='text-align: left;'><span style='color: #ffffff; font-size: 16px;'>sybil.cloud</span></p>",
+        "rotate": 0,
+        "defaultFontName": "{{fontName}}",
+        "defaultColor": "#ffffff"
+      },
+      {
+        "type": "text",
+        "id": "date-text",
+        "left": 320,
+        "top": 400,
+        "width": 200,
+        "height": 30,
+        "content": "<p style='text-align: left;'><span style='color: #55B691; font-size: 16px;'>{{currentDate}}</span></p>",
+        "rotate": 0,
+        "defaultFontName": "{{fontName}}",
+        "defaultColor": "#55B691"
+      }
+    ],
+    "background": {
+      "type": "image",
+      "image": {
+        "src": "/images/title-background.svg",
+        "size": "cover"
+      }
+    }
+  },
+  {
+    "id": "title-slide-1",
+    "name": "Title Slide 1",
+    "elements": [
+      {
+        "type": "text",
+        "id": "title-text",
+        "left": 100,
+        "top": 150,
+        "width": 800,
+        "height": 100,
+        "content": "<p style='text-align: left;'><span style='color: #55B691; font-size: 48px; font-weight: bold; opacity: 0.5;'>ADD PRESENTATION TITLE</span></p>",
+        "rotate": 0,
+        "defaultFontName": "{{fontName}}",
+        "defaultColor": "#55B691"
+      },
+      {
+        "type": "text",
+        "id": "presenter-text",
+        "left": 100,
+        "top": 360,
+        "width": 800,
+        "height": 50,
+        "content": "<p style='text-align: left;'><span style='color: #ffffff; font-size: 24px; opacity: 0.5;'>Add presenter name here...</span></p>",
+        "rotate": 0,
+        "defaultFontName": "{{fontName}}",
+        "defaultColor": "#ffffff"
+      },
+      {
+        "type": "text",
+        "id": "website-text",
+        "left": 100,
+        "top": 400,
+        "width": 200,
+        "height": 30,
+        "content": "<p style='text-align: left;'><span style='color: #ffffff; font-size: 16px;'>sybil.cloud</span></p>",
+        "rotate": 0,
+        "defaultFontName": "{{fontName}}",
+        "defaultColor": "#ffffff"
+      },
+      {
+        "type": "text",
+        "id": "date-text",
+        "left": 320,
+        "top": 400,
+        "width": 200,
+        "height": 30,
+        "content": "<p style='text-align: left;'><span style='color: #55B691; font-size: 16px;'>{{currentDate}}</span></p>",
+        "rotate": 0,
+        "defaultFontName": "{{fontName}}",
+        "defaultColor": "#55B691"
+      }
+    ],
+    "background": {
+      "type": "image",
+      "image": {
+        "src": "/images/title_background1.svg",
+        "size": "cover"
+      }
+    }
+  },
+  {
+    "id": "title-and-content",
+    "name": "Title and Content",
+    "elements": [
+      {
+        "type": "text",
+        "id": "date-text",
+        "left": 30,
+        "top": 20,
+        "width": 200,
+        "height": 30,
+        "content": "<p style='text-align: left;'><span style='color: #55B691; font-size: 16px;'>{{currentDate}}</span></p>",
+        "rotate": 0,
+        "defaultFontName": "{{fontName}}",
+        "defaultColor": "#55B691"
+      },
+      {
+        "type": "text",
+        "id": "title-text",
+        "left": 90,
+        "top": 95,
+        "width": 800,
+        "height": 100,
+        "content": "<p style='text-align: left;'><span style='color: #55B691; font-size: 48px; font-weight: bold; opacity: 0.5;'>Add Title</span></p>",
+        "rotate": 0,
+        "defaultFontName": "{{fontName}}",
+        "defaultColor": "#55B691"
+      },
+      {
+        "type": "text",
+        "id": "sybil-text",
+        "left": 10,
+        "top": 513,
+        "width": 200,
+        "height": 30,
+        "content": "<p style='text-align: left;'><span style='color: #000000; font-size: 16px; font-family: Arial;'>sybil.cloud</span></p>",
+        "rotate": 0,
+        "defaultFontName": "Arial",
+        "defaultColor": "#000000"
+      }
+    ],
+    "background": {
+      "type": "image",
+      "image": {
+        "src": "/images/Picture_with_caption.svg",
+        "size": "cover"
+      }
+    }
+  },
+  {
+    "id": "title-and-content-2",
+    "name": "Title and Content 2",
+    "elements": [
+      {
+        "type": "text",
+        "id": "date-text",
+        "left": 30,
+        "top": 20,
+        "width": 200,
+        "height": 30,
+        "content": "<p style='text-align: left;'><span style='color: #55B691; font-size: 16px;'>{{currentDate}}</span></p>",
+        "rotate": 0,
+        "defaultFontName": "{{fontName}}",
+        "defaultColor": "#55B691"
+      },
+      {
+        "type": "text",
+        "id": "title-text",
+        "left": 90,
+        "top": 95,
+        "width": 800,
+        "height": 100,
+        "content": "<p style='text-align: left;'><span style='color: #55B691; font-size: 48px; font-weight: bold; opacity: 0.5;'>Add Title</span></p>",
+        "rotate": 0,
+        "defaultFontName": "{{fontName}}",
+        "defaultColor": "#55B691"
+      },
+      {
+        "type": "text",
+        "id": "sybil-text",
+        "left": 10,
+        "top": 513,
+        "width": 200,
+        "height": 30,
+        "content": "<p style='text-align: left;'><span style='color: #ffffff; font-size: 16px; font-family: Arial;'>sybil.cloud</span></p>",
+        "rotate": 0,
+        "defaultFontName": "Arial",
+        "defaultColor": "#ffffff"
+      }
+    ],
+    "background": {
+      "type": "image",
+      "image": {
+        "src": "/images/Title_and_content2.svg",
+        "size": "cover"
+      }
+    }
+  },
+  {
+    "id": "breaker-slide",
+    "name": "Breaker Slide",
+    "elements": [
+      {
+        "type": "text",
+        "id": "date-text",
+        "left": 30,
+        "top": 20,
+        "width": 200,
+        "height": 30,
+        "content": "<p style='text-align: left;'><span style='color: #55B691; font-size: 16px;'>{{currentDate}}</span></p>",
+        "rotate": 0,
+        "defaultFontName": "{{fontName}}",
+        "defaultColor": "#55B691"
+      },
+      {
+        "type": "text",
+        "id": "breaker-text",
+        "left": 100,
+        "top": 300,
+        "width": 680,
+        "height": 120,
+        "content": "<p style='text-align: left;'><span style='color: #55B691; font-size: 36px; font-weight: bold; opacity: 0.5;'>Add breaker slide template here.</span></p>",
+        "rotate": 0,
+        "defaultFontName": "{{fontName}}",
+        "defaultColor": "#55B691"
+      },
+      {
+        "type": "text",
+        "id": "sybil-text",
+        "left": 10,
+        "top": 513,
+        "width": 200,
+        "height": 30,
+        "content": "<p style='text-align: left;'><span style='color: #000000; font-size: 16px; font-family: Arial;'>sybil.cloud</span></p>",
+        "rotate": 0,
+        "defaultFontName": "Arial",
+        "defaultColor": "#000000"
+      }
+    ],
+    "background": {
+      "type": "image",
+      "image": {
+        "src": "/images/Breaker_slide.svg",
+        "size": "cover"
+      }
+    }
+  },
+  {
+    "id": "picture-with-caption",
+    "name": "Picture with Caption",
+    "elements": [
+      {
+        "type": "text",
+        "id": "date-text",
+        "left": 30,
+        "top": 20,
+        "width": 200,
+        "height": 30,
+        "content": "<p style='text-align: left;'><span style='color: #55B691; font-size: 16px;'>{{currentDate}}</span></p>",
+        "rotate": 0,
+        "defaultFontName": "{{fontName}}",
+        "defaultColor": "#55B691"
+      },
+      {
+        "type": "text",
+        "id": "title-text",
+        "left": 100,
+        "top": 120,
         "width": 300,
-        "height": 320,
-        "viewBox": [200, 200],
-        "path": "M 0 0 L 0 200 L 200 200 Z",
-        "fill": "{{themeColor}}",
-        "fixedRatio": false,
-        "flipV": true,
-        "rotate": 0
+        "height": 60,
+        "content": "<p style='text-align: left;'><span style='color: #666666; font-size: 24px; font-weight: bold; opacity: 0.7;'>Click to add title</span></p>",
+        "rotate": 0,
+        "defaultFontName": "{{fontName}}",
+        "defaultColor": "#666666"
       },
       {
         "type": "text",
-        "id": "AkIh3E",
-        "left": 355,
-        "top": 95.11111111111111,
-        "width": 585,
-        "height": 116,
-        "lineHeight": 1.2,
-        "content": "<p style=''><strong><span style='font-size: 80px'>Enter Title Here</span></strong></p>",
+        "id": "caption-text",
+        "left": 100,
+        "top": 220,
+        "width": 350,
+        "height": 200,
+        "content": "<p style='text-align: left;'><span style='color: #666666; font-size: 18px; opacity: 0.7;'>Add copy here...</span></p>",
         "rotate": 0,
         "defaultFontName": "{{fontName}}",
-        "defaultColor": "{{fontColor}}",
-        "wordSpace": 6
+        "defaultColor": "#666666"
       },
       {
         "type": "text",
-        "id": "7stmVP",
-        "left": 355,
-        "top": 253.25,
-        "width": 585,
-        "height": 56,
-        "content": "<p><span style='font-size:  24px'>Enter Subtitle Here</span></p>",
+        "id": "sybil-text",
+        "left": 10,
+        "top": 513,
+        "width": 200,
+        "height": 30,
+        "content": "<p style='text-align: left;'><span style='color: #666666; font-size: 16px; font-family: Arial;'>sybil.cloud</span></p>",
         "rotate": 0,
-        "defaultFontName": "{{fontName}}",
-        "defaultColor": "{{fontColor}}"
-      },
-      {
-        "type": "line",
-        "id": "FnpZs4",
-        "left": 361,
-        "top": 238,
-        "start": [0, 0],
-        "end": [549, 0],
-        "points": ["", ""],
-        "color": "{{themeColor}}",
-        "style": "solid",
-        "width": 2
+        "defaultFontName": "Arial",
+        "defaultColor": "#666666"
       }
     ],
     "background": {
-      "type": "solid",
-      "color": "{{backgroundColor}}"
-    }
-  },
-  {
-    "id": "template",
-    "elements": [
-      {
-        "type": "text",
-        "id": "ptNnUJ",
-        "left": 145,
-        "top": 148,
-        "width": 711,
-        "height": 77,
-        "lineHeight": 1.2,
-        "content": "<p style='text-align: center;'><strong><span style='font-size: 48px'>Add Title Here</span></strong></p>",
-        "rotate": 0,
-        "defaultFontName": "{{fontName}}",
-        "defaultColor": "{{fontColor}}"
-      },
-      {
-        "type": "text",
-        "id": "mRHvQN",
-        "left": 207.50000000000003,
-        "top": 249.84259259259264,
-        "width": 585,
-        "height": 56,
-        "content": "<p style='text-align: center;'><span style='font-size: 24px'>Add Subtitle Here</span></p>",
-        "rotate": 0,
-        "defaultFontName": "{{fontName}}",
-        "defaultColor": "{{fontColor}}"
-      },
-      {
-        "type": "line",
-        "id": "7CQDwc",
-        "left": 323.09259259259267,
-        "top": 238.33333333333334,
-        "start": [0, 0],
-        "end": [354.8148148148148, 0],
-        "points": ["", ""],
-        "color": "{{themeColor}}",
-        "style": "solid",
-        "width": 4
-      },
-      {
-        "type": "shape",
-        "id": "09wqWw",
-        "left": -27.648148148148138,
-        "top": 432.73148148148147,
-        "width": 1056.2962962962963,
-        "height": 162.96296296296296,
-        "viewBox": [200, 200],
-        "path": "M 0 20 C 40 -40 60 60 100 20 C 140 -40 160 60 200 20 L 200 180 C 140 240 160 140 100 180 C 40 240 60 140 0 180 L 0 20 Z",
-        "fill": "{{themeColor}}",
-        "fixedRatio": false,
-        "rotate": 0
+      "type": "image",
+      "image": {
+        "src": "/images/Picture_with_caption.svg",
+        "size": "cover"
       }
-    ],
-    "background": {
-      "type": "solid",
-      "color": "{{backgroundColor}}"
     }
   },
   {
-    "id": "template",
+    "id": "picture-with-caption-2",
+    "name": "Picture with Caption 2",
     "elements": [
       {
-        "type": "shape",
-        "id": "vSheCJ",
-        "left": 183.5185185185185,
-        "top": 175.5092592592593,
-        "width": 605.1851851851851,
-        "height": 185.18518518518516,
-        "viewBox": [200, 200],
-        "path": "M 0 0 L 200 0 L 200 200 L 0 200 Z",
-        "fill": "{{themeColor}}",
-        "fixedRatio": false,
-        "rotate": 0
-      },
-      {
-        "type": "shape",
-        "id": "Mpwv7x",
-        "left": 211.29629629629628,
-        "top": 201.80555555555557,
-        "width": 605.1851851851851,
-        "height": 185.18518518518516,
-        "viewBox": [200, 200],
-        "path": "M 0 0 L 200 0 L 200 200 L 0 200 Z",
-        "fill": "{{themeColor}}",
-        "fixedRatio": false,
+        "type": "text",
+        "id": "date-text",
+        "left": 30,
+        "top": 20,
+        "width": 200,
+        "height": 30,
+        "content": "<p style='text-align: left;'><span style='color: #55B691; font-size: 16px;'>{{currentDate}}</span></p>",
         "rotate": 0,
-        "opacity": 0.7
+        "defaultFontName": "{{fontName}}",
+        "defaultColor": "#55B691"
       },
       {
         "type": "text",
-        "id": "WQOTAp",
-        "left": 304.9074074074074,
-        "top": 198.10185185185182,
-        "width": 417.9629629629629,
-        "height": 140,
-        "content": "<p style='text-align: center;'><strong><span style='color: #ffffff;'><span style='font-size: 80px'>Thank You</span></span></strong></p>",
+        "id": "title-text",
+        "left": 100,
+        "top": 120,
+        "width": 300,
+        "height": 60,
+        "content": "<p style='text-align: left;'><span style='color: #666666; font-size: 24px; font-weight: bold; opacity: 0.7;'>Click to add title</span></p>",
         "rotate": 0,
         "defaultFontName": "{{fontName}}",
-        "defaultColor": "{{fontColor}}",
-        "wordSpace": 5
-      }
-    ],
-    "background": {
-      "type": "solid",
-      "color": "{{backgroundColor}}"
-    }
-  },
-  {
-    "id": "template",
-    "elements": [
-      {
-        "type": "shape",
-        "id": "cql0h8",
-        "left": 0,
-        "top": 0,
-        "width": 352.59259259259255,
-        "height": 562.5,
-        "viewBox": [200, 200],
-        "path": "M 0 0 L 200 0 L 200 200 L 0 200 Z",
-        "fill": "{{themeColor}}",
-        "fixedRatio": false,
-        "rotate": 0
+        "defaultColor": "#666666"
       },
       {
-        "type": "shape",
-        "id": "_RTaF4",
-        "left": 171.4814814814814,
-        "top": 100.13888888888887,
-        "width": 362.22222222222223,
-        "height": 362.22222222222223,
-        "viewBox": [200, 200],
-        "path": "M 100 0 A 50 50 0 1 1 100 200 A 50 50 0 1 1 100 0 Z",
-        "fill": "rgba(255,255,255,0)",
-        "fixedRatio": false,
+        "type": "text",
+        "id": "caption-text",
+        "left": 100,
+        "top": 220,
+        "width": 350,
+        "height": 200,
+        "content": "<p style='text-align: left;'><span style='color: #666666; font-size: 18px; opacity: 0.7;'>Add copy here...</span></p>",
         "rotate": 0,
-        "outline": {
-          "width": 10,
-          "color": "{{backgroundColor}}",
-          "style": "solid"
-        }
-      },
-      {
-        "type": "shape",
-        "id": "UZfo8N",
-        "left": 216.66666666666663,
-        "top": 145.32407407407408,
-        "width": 271.85185185185185,
-        "height": 271.85185185185185,
-        "viewBox": [200, 200],
-        "path": "M 100 0 A 50 50 0 1 1 100 200 A 50 50 0 1 1 100 0 Z",
-        "fill": "{{backgroundColor}}",
-        "fixedRatio": false,
-        "rotate": 0,
-        "text": {
-          "content": "<p style='text-align: center;'><span style='font-size: 80px'>01</span></p>",
           "defaultFontName": "{{fontName}}",
-          "defaultColor": "{{fontColor}}",
-          "align": "middle"
-        }
+        "defaultColor": "#666666"
       },
       {
         "type": "text",
-        "id": "ysqtBg",
-        "left": 561.4814814814814,
-        "top": 100.1388888888889,
-        "width": 359.25925925925924,
+        "id": "sybil-text",
+        "left": 10,
+        "top": 513,
+        "width": 200,
+        "height": 30,
+        "content": "<p style='text-align: left;'><span style='color: #000000; font-size: 16px; font-family: Arial;'>sybil.cloud</span></p>",
+        "rotate": 0,
+        "defaultFontName": "Arial",
+        "defaultColor": "#000000"
+      }
+    ],
+    "background": {
+      "type": "image",
+      "image": {
+        "src": "/images/Picture_with_caption2.svg",
+        "size": "cover"
+      }
+    }
+  },
+  {
+    "id": "title-only-1",
+    "name": "Title Only 1",
+    "elements": [
+      {
+        "type": "text",
+        "id": "date-text",
+        "left": 30,
+        "top": 20,
+        "width": 200,
+        "height": 30,
+        "content": "<p style='text-align: left;'><span style='color: #ffffff; font-size: 16px;'>{{currentDate}}</span></p>",
+        "rotate": 0,
+        "defaultFontName": "{{fontName}}",
+        "defaultColor": "#ffffff"
+      },
+      {
+        "type": "text",
+        "id": "title-text",
+        "left": 158,
+        "top": 250,
+        "width": 400,
         "height": 80,
-        "content": "<p style=''><strong><span style='font-size: 40px'>Enter Title Here</span></strong></p>",
+        "content": "<p style='text-align: left;'><span style='color: #222A33; font-size: 36px; font-weight: bold;'>Add breaker slide title here</span></p>",
         "rotate": 0,
         "defaultFontName": "{{fontName}}",
-        "defaultColor": "{{fontColor}}"
+        "defaultColor": "#222A33"
       },
       {
         "type": "text",
-        "id": "lXsoHa",
-        "left": 572.5925925925925,
-        "top": 202.3611111111111,
-        "width": 257.77777777777777,
-        "height": 260,
-        "content": "<ol><li><p style=''>Enter content here</p></li><li><p style=''>Enter content here</p></li><li><p style=''>Enter content here</p></li><li><p style=''>Enter content here</p></li><li><p style=''>Enter content here</p></li><li><p style=''>Enter content here</p></li></ol>",
+        "id": "subtitle-text",
+        "left": 158,
+        "top": 400,
+        "width": 400,
+        "height": 60,
+        "content": "<p style='text-align: left;'><span style='color: #222A33; font-size: 24px;'>Add subtitle here...</span></p>",
         "rotate": 0,
         "defaultFontName": "{{fontName}}",
-        "defaultColor": "{{fontColor}}",
-        "lineHeight": 2,
-        "fill": "{{subColor}}"
+        "defaultColor": "#222A33"
+      },
+      {
+        "type": "text",
+        "id": "sybil-text",
+        "left": 10,
+        "top": 513,
+        "width": 200,
+        "height": 30,
+        "content": "<p style='text-align: left;'><span style='color: #ffffff; font-size: 16px; font-family: Arial;'>sybil.cloud</span></p>",
+        "rotate": 0,
+        "defaultFontName": "Arial",
+        "defaultColor": "#ffffff"
       }
     ],
     "background": {
-      "type": "solid",
-      "color": "{{backgroundColor}}"
+      "type": "image",
+      "image": {
+        "src": "/images/Title_only1.svg",
+        "size": "cover"
+      }
     }
   },
   {
-    "id": "template",
+    "id": "title-and-content-quote",
+    "name": "Title and Content",
     "elements": [
       {
-        "type": "shape",
-        "id": "EBBnTr",
-        "left": 360.5996472663139,
-        "top": 141.8496472663139,
-        "width": 278.80070546737215,
-        "height": 278.80070546737215,
-        "viewBox": [200, 200],
-        "path": "M 100 0 A 50 50 0 1 1 100 200 A 50 50 0 1 1 100 0 Z",
-        "fill": "{{themeColor}}",
-        "fixedRatio": true,
+        "type": "text",
+        "id": "date-text",
+        "left": 30,
+        "top": 20,
+        "width": 200,
+        "height": 30,
+        "content": "<p style='text-align: left;'><span style='color: #ffffff; font-size: 16px;'>{{currentDate}}</span></p>",
         "rotate": 0,
-        "outline": {
-          "width": 0,
-          "color": "{{backgroundColor}}",
-          "style": "solid"
-        }
-      },
-      {
-        "type": "shape",
-        "id": "gDIWDH",
-        "left": 456.4373897707231,
-        "top": 98.287037037037,
-        "width": 87.12522045855381,
-        "height": 87.12522045855381,
-        "viewBox": [200, 200],
-        "path": "M 100 0 A 50 50 0 1 1 100 200 A 50 50 0 1 1 100 0 Z",
-        "fill": "{{themeColor}}",
-        "fixedRatio": true,
-        "rotate": 0,
-        "outline": {
-          "width": 4,
-          "color": "{{backgroundColor}}",
-          "style": "solid"
-        },
-        "text": {
-          "content": "<p style='text-align: center;'><span style='color: #ffffff;'>1</span></p>",
-          "defaultFontName": "{{fontName}}",
-          "defaultColor": "{{fontColor}}",
-          "align": "middle"
-        }
-      },
-      {
-        "type": "shape",
-        "id": "DUWT7E",
-        "left": 317.037037037037,
-        "top": 237.68738977072314,
-        "width": 87.12522045855381,
-        "height": 87.12522045855381,
-        "viewBox": [200, 200],
-        "path": "M 100 0 A 50 50 0 1 1 100 200 A 50 50 0 1 1 100 0 Z",
-        "fill": "{{themeColor}}",
-        "fixedRatio": true,
-        "rotate": 0,
-        "outline": {
-          "width": 4,
-          "color": "{{backgroundColor}}",
-          "style": "solid"
-        },
-        "text": {
-          "content": "<p style='text-align: center;'><span style='color: #ffffff;'>4</span></p>",
-          "defaultFontName": "{{fontName}}",
-          "defaultColor": "{{fontColor}}",
-          "align": "middle"
-        }
-      },
-      {
-        "type": "shape",
-        "id": "pbhn38",
-        "left": 456.43738977072303,
-        "top": 377.08774250440916,
-        "width": 87.12522045855381,
-        "height": 87.12522045855381,
-        "viewBox": [200, 200],
-        "path": "M 100 0 A 50 50 0 1 1 100 200 A 50 50 0 1 1 100 0 Z",
-        "fill": "{{themeColor}}",
-        "fixedRatio": true,
-        "rotate": 0,
-        "outline": {
-          "width": 4,
-          "color": "{{backgroundColor}}",
-          "style": "solid"
-        },
-        "text": {
-          "content": "<p style='text-align: center;'><span style='color: #ffffff;'>3</span></p>",
-          "defaultFontName": "{{fontName}}",
-          "defaultColor": "{{fontColor}}",
-          "align": "middle"
-        }
-      },
-      {
-        "type": "shape",
-        "id": "CvMKrO",
-        "left": 595.8377425044091,
-        "top": 237.6873897707231,
-        "width": 87.12522045855381,
-        "height": 87.12522045855381,
-        "viewBox": [200, 200],
-        "path": "M 100 0 A 50 50 0 1 1 100 200 A 50 50 0 1 1 100 0 Z",
-        "fill": "{{themeColor}}",
-        "fixedRatio": true,
-        "rotate": 0,
-        "outline": {
-          "width": 4,
-          "color": "{{backgroundColor}}",
-          "style": "solid"
-        },
-        "text": {
-          "content": "<p style='text-align: center;'><span style='color: #ffffff;'>2</span></p>",
-          "defaultFontName": "{{fontName}}",
-          "defaultColor": "{{fontColor}}",
-          "align": "middle"
-        }
+        "defaultFontName": "{{fontName}}",
+        "defaultColor": "#ffffff"
       },
       {
         "type": "text",
-        "id": "adudHB",
-        "left": 402.962962962963,
-        "top": 39.39814814814815,
-        "width": 194.07407407407408,
-        "height": 50,
-        "content": "<p style='text-align: center;'>Enter content here</p>",
+        "id": "quote-text",
+        "left": 100,
+        "top": 250,
+        "width": 880,
+        "height": 200,
+        "content": "<p style='text-align: center;'><span style='color: #666666; font-size: 28px; font-weight: bold; opacity: 0.7;'>Add a nice quote here</span></p>",
         "rotate": 0,
-        "defaultFontName": "{{fontName}}",
-        "defaultColor": "{{fontColor}}"
+          "defaultFontName": "{{fontName}}",
+        "defaultColor": "#666666"
       },
       {
         "type": "text",
-        "id": "9UpDwg",
-        "left": 402.962962962963,
-        "top": 473.1018518518518,
-        "width": 194.07407407407408,
-        "height": 50,
-        "content": "<p style='text-align: center;'>Enter content here</p>",
+        "id": "sybil-text",
+        "left": 10,
+        "top": 513,
+        "width": 200,
+        "height": 30,
+        "content": "<p style='text-align: left;'><span style='color: #ffffff; font-size: 16px; font-family: Arial;'>sybil.cloud</span></p>",
         "rotate": 0,
-        "defaultFontName": "{{fontName}}",
-        "defaultColor": "{{fontColor}}"
+        "defaultFontName": "Arial",
+        "defaultColor": "#ffffff"
       }
     ],
     "background": {
-      "type": "solid",
-      "color": "{{backgroundColor}}"
+      "type": "image",
+      "image": {
+        "src": "/images/Title_and_content.svg",
+        "size": "cover"
+      }
+    }
+  },
+  {
+    "id": "title-and-content-quote-1",
+    "name": "Title and Content 1",
+    "elements": [
+      {
+        "type": "text",
+        "id": "date-text",
+        "left": 30,
+        "top": 20,
+        "width": 200,
+        "height": 30,
+        "content": "<p style='text-align: left;'><span style='color: #55B691; font-size: 16px;'>{{currentDate}}</span></p>",
+        "rotate": 0,
+          "defaultFontName": "{{fontName}}",
+        "defaultColor": "#55B691"
+      },
+      {
+        "type": "text",
+        "id": "quote-text",
+        "left": 100,
+        "top": 250,
+        "width": 880,
+        "height": 200,
+        "content": "<p style='text-align: center;'><span style='color: #666666; font-size: 28px; font-weight: bold; opacity: 0.7;'>Add a nice quote here</span></p>",
+        "rotate": 0,
+          "defaultFontName": "{{fontName}}",
+        "defaultColor": "#666666"
+      },
+      {
+        "type": "text",
+        "id": "sybil-text",
+        "left": 10,
+        "top": 513,
+        "width": 200,
+        "height": 30,
+        "content": "<p style='text-align: left;'><span style='color: #666666; font-size: 16px; font-family: Arial;'>sybil.cloud</span></p>",
+        "rotate": 0,
+        "defaultFontName": "Arial",
+        "defaultColor": "#666666"
+      }
+    ],
+    "background": {
+      "type": "image",
+      "image": {
+        "src": "/images/Title_and_content3.svg",
+        "size": "cover"
+      }
+    }
+  },
+  {
+    "id": "title-and-content-quote-2",
+    "name": "Title and Content 2",
+    "elements": [
+      {
+        "type": "text",
+        "id": "date-text",
+        "left": 30,
+        "top": 20,
+        "width": 200,
+        "height": 30,
+        "content": "<p style='text-align: left;'><span style='color: #55B691; font-size: 16px;'>{{currentDate}}</span></p>",
+        "rotate": 0,
+        "defaultFontName": "{{fontName}}",
+        "defaultColor": "#55B691"
+      },
+      {
+        "type": "text",
+        "id": "quote-text",
+        "left": 100,
+        "top": 250,
+        "width": 880,
+        "height": 200,
+        "content": "<p style='text-align: center;'><span style='color: #666666; font-size: 28px; font-weight: bold; opacity: 0.7;'>Add a nice quote here</span></p>",
+        "rotate": 0,
+        "defaultFontName": "{{fontName}}",
+        "defaultColor": "#666666"
+      },
+      {
+        "type": "text",
+        "id": "sybil-text",
+        "left": 10,
+        "top": 513,
+        "width": 200,
+        "height": 30,
+        "content": "<p style='text-align: left;'><span style='color: #ffffff; font-size: 16px; font-family: Arial;'>sybil.cloud</span></p>",
+        "rotate": 0,
+        "defaultFontName": "Arial",
+        "defaultColor": "#ffffff"
+      }
+    ],
+    "background": {
+      "type": "image",
+      "image": {
+        "src": "/images/Ttitle_and_content1.svg",
+        "size": "cover"
+      }
+    }
+  },
+  {
+    "id": "title-and-table",
+    "name": "Title and Table",
+    "elements": [
+      {
+        "type": "text",
+        "id": "date-text",
+        "left": 30,
+        "top": 20,
+        "width": 200,
+        "height": 30,
+        "content": "<p style='text-align: left;'><span style='color: #55B691; font-size: 16px;'>{{currentDate}}</span></p>",
+        "rotate": 0,
+        "defaultFontName": "{{fontName}}",
+        "defaultColor": "#55B691"
+      },
+      {
+        "type": "text",
+        "id": "title-text",
+        "left": 90,
+        "top": 95,
+        "width": 800,
+        "height": 100,
+        "content": "<p style='text-align: left;'><span style='color: #55B691; font-size: 48px; font-weight: bold; opacity: 0.5;'>Add Title</span></p>",
+        "rotate": 0,
+          "defaultFontName": "{{fontName}}",
+        "defaultColor": "#55B691"
+      },
+      {
+        "type": "image",
+        "id": "mock-table-image",
+        "left": 50,
+        "top": 170,
+        "width": 680,
+        "height": 320,
+        "src": "/images/MockTable.svg",
+        "rotate": 0
+      },
+      {
+        "type": "dashboard-table",
+        "id": "dashboard-table-1",
+        "left": 50,
+        "top": 170,
+        "width": 680,
+        "height": 320,
+        "isTemplatePlaceholder": true,
+        "portfolioId": null,
+        "bounceId": null,
+        "isInvisible": true
+      },
+      {
+        "type": "text",
+        "id": "right-text",
+        "left": 750,
+        "top": 100,
+        "width": 200,
+        "height": 1000,
+        "content": "<p style='text-align: left;'><span style='color: #ffffff; font-size: 16px;'>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</span></p>",
+        "rotate": 0,
+        "defaultFontName": "{{fontName}}",
+        "defaultColor": "#ffffff"
+      },
+      {
+        "type": "text",
+        "id": "sybil-text",
+        "left": 10,
+        "top": 513,
+        "width": 200,
+        "height": 30,
+        "content": "<p style='text-align: left;'><span style='color: #ffffff; font-size: 16px; font-family: Arial;'>sybil.cloud</span></p>",
+        "rotate": 0,
+        "defaultFontName": "Arial",
+        "defaultColor": "#ffffff"
+      }
+    ],
+    "background": {
+      "type": "image",
+      "image": {
+        "src": "/images/Title_and_content2.svg",
+        "size": "cover"
+      }
     }
   }
 ]

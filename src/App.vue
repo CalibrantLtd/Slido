@@ -2,6 +2,7 @@
   <template v-if="slides.length">
     <Screen v-if="screening" />
     <template v-else-if="_isPC">
+      <LoaderComponent v-if="globalStore.isLoading" />
       <router-view />
     </template>
     <Mobile v-else />
@@ -14,6 +15,7 @@ import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useScreenStore, useMainStore, useSnapshotStore, useSlidesStore } from '@/store'
+import { useGlobalStore } from '@/stores/global'
 import { LOCALSTORAGE_KEY_DISCARDED_DB } from '@/configs/storage'
 import { deleteDiscardedDB } from '@/utils/database'
 import { isPC } from '@/utils/common'
@@ -24,6 +26,7 @@ import Editor from './views/Editor/index.vue'
 import Screen from './views/Screen/index.vue'
 import Mobile from './views/Mobile/index.vue'
 import FullscreenSpin from '@/components/FullscreenSpin.vue'
+import LoaderComponent from '@/components/LoaderComponent.vue'
 
 const router = useRouter()
 const _isPC = isPC()
@@ -31,6 +34,7 @@ const _isPC = isPC()
 const mainStore = useMainStore()
 const slidesStore = useSlidesStore()
 const snapshotStore = useSnapshotStore()
+const globalStore = useGlobalStore()
 const { databaseId } = storeToRefs(mainStore)
 const { slides } = storeToRefs(slidesStore)
 const { screening } = storeToRefs(useScreenStore())

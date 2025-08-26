@@ -118,9 +118,6 @@ function toggleSection(sectionName: string) {
   expandedSections.value[sectionName] = !expandedSections.value[sectionName];
 }
 
-function refreshPortfolioData() {
-  dashboardStore.getCurrentPortfolioFromStorage();
-}
 
 function clearSelection(sectionName: string) {
   dashboardStore.setFilterSelection(sectionName, []);

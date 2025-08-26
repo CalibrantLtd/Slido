@@ -111,6 +111,10 @@ export const useSlidesStore = defineStore('slides', {
       } = state.theme
   
       const subColor = tinycolor(fontColor).isDark() ? 'rgba(230, 230, 230, 0.5)' : 'rgba(180, 180, 180, 0.5)'
+      
+      // Generate current date in DD-MM-YYYY format
+      const now = new Date()
+      const currentDate = String(now.getDate()).padStart(2, '0') + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + now.getFullYear()
   
       const layoutsString = JSON.stringify(state._layouts)
         .replace(/{{themeColor}}/g, themeColor)
@@ -118,6 +122,7 @@ export const useSlidesStore = defineStore('slides', {
         .replace(/{{fontName}}/g, fontName)
         .replace(/{{backgroundColor}}/g, backgroundColor)
         .replace(/{{subColor}}/g, subColor)
+        .replace(/{{currentDate}}/g, currentDate)
       
       return JSON.parse(layoutsString)
     },

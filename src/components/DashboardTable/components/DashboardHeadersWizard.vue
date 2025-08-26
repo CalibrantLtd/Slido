@@ -2,7 +2,7 @@
   <div class="dashboard-headers-wizard">
     <div class="wizard-title">
       <h4>Configure Dashboard Table</h4>
-      <p>Set up the table headers and controls below. The final table will display exactly as configured.</p>
+      <p>Set up the table headers below. The final table will display exactly as configured.</p>
     </div>
     
     <div class="table-preview">

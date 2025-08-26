@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { ref } from 'vue';
 import DashboardHeader from './components/headers/DashboardHeader.vue';
 import UltimatesHeader from './components/headers/UltimatesHeader.vue';
@@ -24,6 +24,8 @@ onMounted(() => {
 
 const props = defineProps<{
   overflow: string;
+  containerWidth?: number;
+  containerHeight?: number;
 }>();
 const mqy = computed(() => dashboardStore.dashboards.mqy);
 
@@ -46,6 +48,75 @@ const margin = computed(() => dashboardStore.margin);
 const leftColumnSize = computed(
   () => 3 + (dashboardStore.isShowingExposure ? portfolioStore.getExposureLength() + 1 : 0)
 );
+
+const tableEl = ref<HTMLElement | null>(null);
+const containerEl = ref<HTMLElement | null>(null);
+const naturalWidth = ref(1200);
+const naturalHeight = ref(800);
+let resizeObserver: ResizeObserver | null = null;
+let containerObserver: ResizeObserver | null = null;
+const containerWidthPx = ref(0);
+const containerHeightPx = ref(0);
+
+function updateNaturalSize() {
+  if (tableEl.value) {
+    naturalWidth.value = tableEl.value.scrollWidth || tableEl.value.offsetWidth || 1200;
+    const thead = (tableEl.value as HTMLTableElement).tHead as HTMLElement | null;
+    const headerHeight = thead ? thead.offsetHeight : 40;
+    const rows = tableEl.value.querySelectorAll('tbody tr');
+    let rowHeight = 20;
+    for (let i = 0; i < rows.length; i++) {
+      const h = (rows[i] as HTMLElement).offsetHeight;
+      if (h) { rowHeight = h; break; }
+    }
+    const rowsHeight = rows.length * rowHeight;
+    naturalHeight.value = Math.max(headerHeight + rowsHeight, tableEl.value.scrollHeight || 0);
+  }
+}
+
+onMounted(async () => {
+  await nextTick();
+  updateNaturalSize();
+  if ('ResizeObserver' in window) {
+    resizeObserver = new ResizeObserver(() => updateNaturalSize());
+    if (tableEl.value) resizeObserver.observe(tableEl.value);
+    containerObserver = new ResizeObserver(() => {
+      if (containerEl.value) {
+        containerWidthPx.value = containerEl.value.clientWidth;
+        containerHeightPx.value = containerEl.value.clientHeight;
+      }
+      updateNaturalSize();
+    });
+    if (containerEl.value) containerObserver.observe(containerEl.value);
+  }
+  window.addEventListener('resize', updateNaturalSize);
+  if (containerEl.value) {
+    containerWidthPx.value = containerEl.value.clientWidth;
+    containerHeightPx.value = containerEl.value.clientHeight;
+  }
+});
+
+onBeforeUnmount(() => {
+  if (resizeObserver && tableEl.value) resizeObserver.unobserve(tableEl.value);
+  if (containerObserver && containerEl.value) containerObserver.unobserve(containerEl.value);
+  window.removeEventListener('resize', updateNaturalSize);
+});
+
+const FUDGE = 0.995; 
+const scaleX = computed(() => {
+  const cw = containerWidthPx.value || props.containerWidth || 1;
+  return (cw / Math.max(naturalWidth.value, 1)) * FUDGE;
+});
+const scaleY = computed(() => {
+  const ch = containerHeightPx.value || props.containerHeight || 1;
+  return (ch / Math.max(naturalHeight.value, 1)) * FUDGE;
+});
+
+const isScaledDown = computed(() => Math.min(scaleX.value, scaleY.value) < 1);
+
+const scaledFontSize = computed(() => 12);
+
+const scaledPadding = computed(() => 6);
 const totalMarginCCR = ref(0);
 const dashboardData = computed<DashboardData>(() => {
   const data = dashboardStore.dashboard_data;
@@ -107,9 +178,35 @@ function toggleIsExposure() {
 </script>
 <template>
   <div>
-    <div class="table-panel relative shadow-md overflow-auto" style="max-height: calc(100vh - 180px); overflow-x: auto; overflow-y: auto;">
-      <table data-testid="performance-table" id="performance_table" class="shadow bg-white" style="border-spacing: 0">
-        <thead class="sticky top-0 z-30 header-teal">
+    <div 
+      class="table-panel relative shadow-md" 
+      :style="{
+        overflow: 'hidden',
+        width: props.containerWidth ? props.containerWidth + 'px' : '100%',
+        height: props.containerHeight ? props.containerHeight + 'px' : 'auto'
+      }"
+      ref="containerEl"
+    >
+      <div 
+        :style="{
+          transform: `scale(${scaleX}, ${scaleY})`,
+          transformOrigin: 'top left',
+          width: naturalWidth + 'px',
+          height: naturalHeight + 'px'
+        }"
+      >
+      <table 
+        data-testid="performance-table" 
+        id="performance_table" 
+        class="shadow bg-white" 
+        ref="tableEl"
+        :style="{
+          borderSpacing: 0,
+          fontSize: scaledFontSize + 'px',
+          tableLayout: 'auto'
+        }"
+      >
+        <thead :class="['header-teal', isScaledDown ? '' : 'sticky top-0 z-30']">
           <tr>
             <DashboardHeader
               :total-margin-ccr="totalMarginCCR"
@@ -264,7 +361,7 @@ function toggleIsExposure() {
               />
             </tr>
           </template>
-          <tr class="sticky z-30 bg-gray-300 bottom-0 total-row">
+          <tr :class="['bg-gray-300', 'total-row', isScaledDown ? '' : 'sticky z-30 bottom-0']">
             <ValueRow
               :row-index="0"
               :margin="margin"
@@ -289,6 +386,7 @@ function toggleIsExposure() {
           </tr>
         </tbody>
       </table>
+      </div>
     </div>
   </div>
 </template>

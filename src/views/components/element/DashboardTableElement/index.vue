@@ -1,7 +1,10 @@
 <template>
   <div 
     class="dashboard-table-element"
-    :class="{ 'lock': elementInfo.lock }"
+    :class="{ 
+      'lock': elementInfo.lock, 
+      'invisible': elementInfo.isInvisible && elementInfo.isTemplatePlaceholder 
+    }"
     :data-element-id="elementInfo.id"
     :style="{
       width: elementInfo.width + 'px',
@@ -30,7 +33,14 @@
           :height="elementInfo.height"
           :outline="elementInfo.outline"
         />
-        <DashboardTable :overflow="elementInfo.props?.overflow || 'auto'" />
+        <!-- Use real DashboardTable if element has real data, otherwise use mock -->
+        <DashboardTable 
+          v-if="!elementInfo.isTemplatePlaceholder && elementInfo.selectedFilters" 
+          overflow="auto"
+          :container-width="elementInfo.width"
+          :container-height="elementInfo.height"
+        />
+        <MockDashboardTable v-else />
         
         <!-- Drag handlers to ensure the element can be selected -->
         <div class="drag-handler top"></div>
@@ -41,11 +51,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { type PPTElement } from '@/types/slides'
 import type { ContextmenuItem } from '@/components/Contextmenu/types'
 import DashboardTable from '@/components/DashboardTable/DashboardTable.vue'
+import MockDashboardTable from '@/components/DashboardTable/MockDashboardTable.vue'
 import ElementOutline from '@/views/components/element/ElementOutline.vue'
+import { useDashboardStore } from '@/store/dashboard'
+import { portfolioService } from '@/services/portfolioService'
 
 const props = defineProps<{
   elementInfo: PPTElement & {
@@ -54,12 +67,72 @@ const props = defineProps<{
     rotate: number
     outline?: any
     props?: any
+    // Dashboard table specific properties
+    portfolioId?: string
+    portfolioName?: string
+    bounceId?: string
+    bounceName?: string
+    selectedFilters?: any
+    accidentUnderwriting?: 'uw' | 'acc'
+    columnConfig?: any
+    isTemplatePlaceholder?: boolean
+    isInvisible?: boolean
   }
   selectElement: (e: MouseEvent | TouchEvent, element: PPTElement, canMove?: boolean) => void
   contextmenus: () => ContextmenuItem[] | null
 }>()
 
 const elementRef = ref<HTMLElement>()
+const dashboardStore = useDashboardStore()
+
+// Load portfolio data if element has portfolio/bounce info
+onMounted(async () => {
+  if (props.elementInfo.portfolioId && props.elementInfo.bounceId && !props.elementInfo.isTemplatePlaceholder) {
+    try {      
+      // Fetch complete portfolio data
+      const completeData = await portfolioService.fetchCompletePortfolioData(
+        props.elementInfo.portfolioId,
+        props.elementInfo.bounceId
+      )
+      
+      // Parse bounce name
+      const bounceName = props.elementInfo.bounceName || ''
+      completeData.portfolioName = props.elementInfo.portfolioName || ''
+      completeData.bounceName = bounceName.slice(26) || bounceName.slice(25)
+      completeData.bounceDate = bounceName.slice(0, 6)
+      completeData.bounceFullName = bounceName
+      
+      // Set portfolio data in dashboard store
+      dashboardStore.setPortfolioData(completeData)
+      
+      // Wait for portfolio data to be fully processed
+      await new Promise(resolve => setTimeout(resolve, 200))
+      
+      // Apply stored filters
+      if (props.elementInfo.selectedFilters) {
+        Object.assign(dashboardStore.selectedFilters, props.elementInfo.selectedFilters)
+      }
+      
+      if (props.elementInfo.accidentUnderwriting) {
+        dashboardStore.setAccidentUnderwriting(props.elementInfo.accidentUnderwriting)
+      }
+      
+      if (props.elementInfo.columnConfig?.showColumn) {
+        dashboardStore.setColumnState({
+          showColumn: props.elementInfo.columnConfig.showColumn,
+          margin: props.elementInfo.columnConfig.margin,
+          showColumnTotal: props.elementInfo.columnConfig.showColumnTotal,
+          totalMargin: props.elementInfo.columnConfig.totalMargin
+        })
+      }
+      
+      await dashboardStore.loadDashboard(completeData)
+      
+    } catch (error) {
+      console.error('❌ Error loading portfolio data for dashboard table:', error)
+    }
+  }
+})
 
 const handleSelectElement = (e: MouseEvent | TouchEvent, canMove = true) => {
   if (props.elementInfo.lock) return
@@ -105,5 +178,10 @@ const handleSelectElement = (e: MouseEvent | TouchEvent, canMove = true) => {
 
 .lock {
   cursor: not-allowed;
+}
+
+.invisible {
+  opacity: 0;
+  pointer-events: auto; /* Keep clickable for portfolio data functionality */
 }
 </style>

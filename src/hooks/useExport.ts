@@ -441,7 +441,17 @@ export default () => {
 
       if (!slide.elements) continue
 
+      // Determine if this slide has a real dashboard table rendered with data
+      const hasRealDashboardTableOnSlide = slide.elements?.some((e: any) =>
+        e?.type === 'dashboard-table' && !e?.isTemplatePlaceholder && (e?.portfolioId || e?.portfolioName)
+      )
+
       for (const el of slide.elements) {
+        if (el?.visible === false) continue
+        // Skip dashboard table placeholders
+        if (el?.type === 'dashboard-table' && el?.isTemplatePlaceholder) continue
+        // Skip mock table image if a real dashboard table exists on this slide
+        if (el?.type === 'image' && el?.src?.includes('MockTable.svg') && hasRealDashboardTableOnSlide) continue
         if (el.type === 'text') {
           const textProps = formatHTML(el.content)
 
@@ -888,5 +898,6 @@ export default () => {
     exportJSON,
     exportSpecificFile,
     exportPPTX,
+    captureDashboardTable,
   }
 }

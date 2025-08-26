@@ -42,7 +42,7 @@
 export interface SybilObjectItem {
   id: string
   name: string
-  type: 'performance-table' | 'performance-chart' | 'comparison-table' | 'comparison-chart' | 'comparison-treemap' | 'triangulation' | 'dashboard-table'
+  type: 'performance-table' | 'performance-chart' | 'comparison-table' | 'comparison-chart' | 'comparison-treemap' | 'triangulation' | 'dashboard-table' | 'dashboard-table-loaded'
 }
 
 defineEmits<{
@@ -55,7 +55,8 @@ const sybilObjects: SybilObjectItem[] = [
   { id: 'comparison-view-table', name: 'Comparison view table', type: 'comparison-table' },
   { id: 'comparison-view-chart', name: 'Comparison view chart', type: 'comparison-chart' },
   { id: 'comparison-view-treemap', name: 'Comparison view treemap', type: 'comparison-treemap' },
-  { id: 'dashboard-table', name: 'Dashboard Table', type: 'dashboard-table' }
+  { id: 'dashboard-table', name: 'Dashboard Table', type: 'dashboard-table' },
+  { id: 'dashboard-table-loaded', name: 'Dashboard Table Loaded', type: 'dashboard-table-loaded' }
 ]
 
 const triangulationObjects: SybilObjectItem[] = [
