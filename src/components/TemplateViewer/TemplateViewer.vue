@@ -747,7 +747,8 @@ const replaceMockTableWithRealData = async (mockTable: any, wizardData: any, cur
       bounceName: element.bounceName,
       attritionalOnly: element.attritionalOnly,
       largeOnly: element.largeOnly,
-      weatherOnly: element.weatherOnly
+      weatherOnly: element.weatherOnly,
+      totalUltimateOnly: element.totalUltimateOnly
     }
     
     element.isTemplatePlaceholder = false
@@ -767,6 +768,9 @@ const replaceMockTableWithRealData = async (mockTable: any, wizardData: any, cur
     }
     if (template.value?.id === 'title-and-weather') {
       element.weatherOnly = true
+    }
+    if (template.value?.id === 'title-and-total-ultimate') {
+      element.totalUltimateOnly = true
     }
     
     const svgImage = slide.elements.find(e => e.type === 'image' && e.src?.includes('MockTable.svg'))
@@ -803,6 +807,7 @@ const restoreMockTables = () => {
           element.attritionalOnly = element._originalMockState.attritionalOnly
           element.largeOnly = element._originalMockState.largeOnly
           element.weatherOnly = element._originalMockState.weatherOnly
+          element.totalUltimateOnly = element._originalMockState.totalUltimateOnly
           
           const svgImage = slide.elements.find(e => e.type === 'image' && e.src?.includes('MockTable.svg'))
           if (svgImage && svgImage._originalVisibility !== undefined) {

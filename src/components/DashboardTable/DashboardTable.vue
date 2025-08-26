@@ -29,6 +29,7 @@ const props = defineProps<{
   attritionalOnly?: boolean;
   largeOnly?: boolean;
   weatherOnly?: boolean;
+  totalUltimateOnly?: boolean;
 }>();
 const mqy = computed(() => dashboardStore.dashboards.mqy);
 
@@ -61,7 +62,21 @@ const weatherKey = computed(() => {
   return match || 'WEATHER';
 });
 const showColumnTotal = computed(() => dashboardStore.showColumnTotal);
+
+const filteredShowColumnTotal = computed(() => {
+  if (props.totalUltimateOnly) {
+    return true; // Force show total columns
+  }
+  return dashboardStore.showColumnTotal;
+});
 const totalMargin = computed(() => dashboardStore.totalMargin);
+
+const filteredTotalMargin = computed(() => {
+  if (props.totalUltimateOnly) {
+    return 112; // Force expand total ultimate columns
+  }
+  return dashboardStore.totalMargin;
+});
 const showColumn = computed(() => dashboardStore.showColumn);
 const margin = computed(() => dashboardStore.margin);
 
@@ -80,6 +95,14 @@ const filteredMargin = computed(() => {
   if (props.weatherOnly) {
     const result: any = { ...dashboardStore.margin };
     result[weatherKey.value] = 112; // expanded spacing to show all sub-columns
+    return result;
+  }
+  if (props.totalUltimateOnly) {
+    const result: any = { ...dashboardStore.margin };
+    // Keep all claims types collapsed (0) but show total ultimate columns
+    Object.keys(result).forEach(key => {
+      result[key] = 0; // collapsed state
+    });
     return result;
   }
   return dashboardStore.margin;
@@ -137,6 +160,14 @@ const filteredShowColumn = computed(() => {
     }
     return filtered;
   }
+  if (props.totalUltimateOnly) {
+    const filtered: any = {};
+    // Show all claims types but collapsed (false)
+    Object.keys(dashboardStore.showColumn).forEach(key => {
+      filtered[key] = false; // Force collapsed state
+    });
+    return filtered;
+  }
   return dashboardStore.showColumn;
 });
 
@@ -150,6 +181,9 @@ const filteredClaimsType = computed(() => {
   if (props.weatherOnly) {
     return [weatherKey.value];
   }
+  if (props.totalUltimateOnly) {
+    return portfolioStore.parameters.claims_nature || ['ATTRITIONAL', 'LARGE'];
+  }
   return portfolioStore.parameters.claims_nature || ['ATTRITIONAL', 'LARGE'];
 });
 
@@ -158,6 +192,9 @@ const filteredVisibleColumns = computed(() => {
   if (props.attritionalOnly || props.largeOnly || props.weatherOnly) {
     return [3]; // Enable IBNR and Ultimate sub-columns for the specific claims type
   }
+  if (props.totalUltimateOnly) {
+    return [1, 2, 3]; // Show GWP, GEP, and CCR (for total ultimate columns)
+  }
   return dashboardStore.visibleColumns;
 });
 
@@ -165,6 +202,9 @@ const filteredVisibleColumns = computed(() => {
 const filteredMainColumns = computed(() => {
   if (props.attritionalOnly || props.largeOnly || props.weatherOnly) {
     return [];
+  }
+  if (props.totalUltimateOnly) {
+    return [1, 2]; // Show GWP and GEP, hide Commission, CCR, Seasonality
   }
   return dashboardStore.visibleColumns;
 });
@@ -191,6 +231,22 @@ function updateNaturalSize() {
       const calculatedWidth = periodColumnWidth + (totalColumns * columnWidth);
       
       naturalWidth.value = calculatedWidth + 5; 
+    } else if (props.totalUltimateOnly) {
+      // For total ultimate mode, calculate based on actual column widths
+      const periodColumnWidth = 112;
+      const gwpGepColumns = 2; // GWP and GEP
+      const claimsTypeCount = (portfolioStore.parameters?.claims_nature as string[])?.length || 2;
+      const baseClaimsColumns = 1; // Each claims type shows 1 column (collapsed)
+      const totalUltimateColumns = 6; // Paid, O/S, Incurred, IBNR, Unearned (if Written), Ultimate
+      const hasUnearned = dashboardStore.underwriting_loss_ratios === 'Written' && dashboardStore.dashboards.uw_acc === 'uw';
+      const ultimateColumns = hasUnearned ? totalUltimateColumns : totalUltimateColumns - 1;
+      
+      const calculatedWidth = periodColumnWidth + 
+                             (gwpGepColumns * 112) + 
+                             (claimsTypeCount * baseClaimsColumns * 112) + 
+                             (ultimateColumns * 112);
+      
+      naturalWidth.value = calculatedWidth + 20; // Add padding
     } else {
       let measuredWidth = tableEl.value.scrollWidth || tableEl.value.offsetWidth || 1200;
 
@@ -230,7 +286,7 @@ onMounted(async () => {
   await nextTick();
   updateNaturalSize();
   
-  if (props.attritionalOnly || props.largeOnly || props.weatherOnly) {
+  if (props.attritionalOnly || props.largeOnly || props.weatherOnly || props.totalUltimateOnly) {
     setTimeout(() => {
       updateNaturalSize();
     }, 100);
@@ -370,20 +426,21 @@ function toggleIsExposure() {
           <tr>
             <DashboardHeader
               :total-margin-ccr="totalMarginCCR"
-              :total-margin="totalMargin"
+              :total-margin="filteredTotalMargin"
               :margin="filteredMargin"
               :left-column-size="filteredLeftColumnSize"
               :visible-columns="filteredMainColumns"
               :hide-totals="hideTotals"
               :claims-type="filteredClaimsType"
+              :total-ultimate-only="props.totalUltimateOnly"
               @on-change-ccr-margin="onChangeCcrMargin"
             />
           </tr>
           <tr>
             <UltimatesHeader
               :margin="filteredMargin"
-              :total-margin="totalMargin"
-              :show-column-total="showColumnTotal"
+              :total-margin="filteredTotalMargin"
+              :show-column-total="filteredShowColumnTotal"
               :show-column="filteredShowColumn"
               :left-column-size="filteredLeftColumnSize"
               :claims-type="filteredClaimsType"
@@ -406,8 +463,8 @@ function toggleIsExposure() {
                 :claims-type="filteredClaimsType"
                 :visible-columns="filteredVisibleColumns"
                 :hide-totals="hideTotals"
-                :show-column-total="showColumnTotal"
-                :total-margin="totalMargin"
+                :show-column-total="filteredShowColumnTotal"
+                :total-margin="filteredTotalMargin"
                 :left-column-size="filteredLeftColumnSize"
                 :total-margin-ccr="totalMarginCCR"
                 :dashboard-data="dashboardData"
@@ -433,8 +490,8 @@ function toggleIsExposure() {
                 :claims-type="filteredClaimsType"
                 :visible-columns="filteredVisibleColumns"
                 :hide-totals="hideTotals"
-                :show-column-total="showColumnTotal"
-                :total-margin="totalMargin"
+                :show-column-total="filteredShowColumnTotal"
+                :total-margin="filteredTotalMargin"
                 :left-column-size="filteredLeftColumnSize"
                 :total-margin-ccr="totalMarginCCR"
                 :dashboard-data="binderDashboardData"
@@ -452,8 +509,8 @@ function toggleIsExposure() {
                 :claims-type="filteredClaimsType"
                 :visible-columns="filteredVisibleColumns"
                 :hide-totals="hideTotals"
-                :show-column-total="showColumnTotal"
-                :total-margin="totalMargin"
+                :show-column-total="filteredShowColumnTotal"
+                :total-margin="filteredTotalMargin"
                 :left-column-size="filteredLeftColumnSize"
                 :total-margin-ccr="totalMarginCCR"
                 :dashboard-data="quarterDashboardData"
@@ -471,8 +528,8 @@ function toggleIsExposure() {
                 :claims-type="filteredClaimsType"
                 :visible-columns="filteredVisibleColumns"
                 :hide-totals="hideTotals"
-                :show-column-total="showColumnTotal"
-                :total-margin="totalMargin"
+                :show-column-total="filteredShowColumnTotal"
+                :total-margin="filteredTotalMargin"
                 :left-column-size="filteredLeftColumnSize"
                 :total-margin-ccr="totalMarginCCR"
                 :dashboard-data="yearDashboardData"
@@ -492,8 +549,8 @@ function toggleIsExposure() {
                 :claims-type="filteredClaimsType"
                 :visible-columns="filteredVisibleColumns"
                 :hide-totals="hideTotals"
-                :show-column-total="showColumnTotal"
-                :total-margin="totalMargin"
+                :show-column-total="filteredShowColumnTotal"
+                :total-margin="filteredTotalMargin"
                 :left-column-size="filteredLeftColumnSize"
                 :total-margin-ccr="totalMarginCCR"
                 :dashboard-data="quarterDashboardData"
@@ -515,8 +572,8 @@ function toggleIsExposure() {
                 :claims-type="filteredClaimsType"
                 :visible-columns="filteredVisibleColumns"
                 :hide-totals="hideTotals"
-                :show-column-total="showColumnTotal"
-                :total-margin="totalMargin"
+                :show-column-total="filteredShowColumnTotal"
+                :total-margin="filteredTotalMargin"
                 :left-column-size="filteredLeftColumnSize"
                 :total-margin-ccr="totalMarginCCR"
                 :dashboard-data="binderDashboardData"
@@ -536,8 +593,8 @@ function toggleIsExposure() {
                 :claims-type="filteredClaimsType"
                 :visible-columns="filteredVisibleColumns"
                 :hide-totals="hideTotals"
-                :show-column-total="showColumnTotal"
-                :total-margin="totalMargin"
+                :show-column-total="filteredShowColumnTotal"
+                :total-margin="filteredTotalMargin"
                 :left-column-size="filteredLeftColumnSize"
                 :total-margin-ccr="totalMarginCCR"
                 :dashboard-data="yearDashboardData"
@@ -556,8 +613,8 @@ function toggleIsExposure() {
               :claims-type="filteredClaimsType"
               :visible-columns="filteredVisibleColumns"
               :hide-totals="hideTotals"
-              :show-column-total="showColumnTotal"
-              :total-margin="totalMargin"
+              :show-column-total="filteredShowColumnTotal"
+              :total-margin="filteredTotalMargin"
               :left-column-size="filteredLeftColumnSize"
               :total-margin-ccr="totalMarginCCR"
               :dashboard-data="totalDashboardData"

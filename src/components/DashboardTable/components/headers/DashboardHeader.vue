@@ -26,6 +26,7 @@ const props = defineProps<{
   visibleColumns?: number[];
   hideTotals?: boolean;
   claimsType?: string[];
+  totalUltimateOnly?: boolean;
 }>();
 
 const visibleColumns = computed(() => props.visibleColumns || dashboardStore.visibleColumns);
@@ -171,6 +172,14 @@ defineEmits(['onChangeCcrMargin']);
             ? 6  // Written mode: Paid, O/S, Incurred, IBNR, Unearned, Ultimate
             : 5  // Earned mode: Paid, O/S, Incurred, IBNR, Ultimate
         )
+        : props.totalUltimateOnly
+        ? (
+          // For total-ultimate-only: calculate based on all visible columns
+          claimsType.length + // Claims type columns (collapsed)
+          (dashboardStore.underwriting_loss_ratios === 'Written' && dashboardStore.dashboards.uw_acc === 'uw'
+            ? 6  // Total Ultimate columns: Paid, O/S, Incurred, IBNR, Unearned, Ultimate
+            : 5) // Total Ultimate columns: Paid, O/S, Incurred, IBNR, Ultimate
+        )
         : claimsType.length +
           1 +
           ((<any>Object).values(margin).reduce((ps: number, s: number) => ps + s, 0) / 112) * 4 +
@@ -183,6 +192,14 @@ defineEmits(['onChangeCcrMargin']);
           dashboardStore.underwriting_loss_ratios === 'Written' && dashboardStore.dashboards.uw_acc === 'uw'
             ? 6 * 112 + 'px'  // Written mode: 6 columns * 112px
             : 5 * 112 + 'px'  // Earned mode: 5 columns * 112px
+        )
+        : props.totalUltimateOnly
+        ? (
+          // For total-ultimate-only: calculate width based on all visible columns
+          (claimsType.length * 112) + // Claims type columns (collapsed)
+          (dashboardStore.underwriting_loss_ratios === 'Written' && dashboardStore.dashboards.uw_acc === 'uw'
+            ? 6 * 112  // Total Ultimate columns: Paid, O/S, Incurred, IBNR, Unearned, Ultimate
+            : 5 * 112) + 'px' // Total Ultimate columns: Paid, O/S, Incurred, IBNR, Ultimate
         )
         : (
           112 * (claimsType.length + 1) -
@@ -203,6 +220,14 @@ defineEmits(['onChangeCcrMargin']);
             ? 6 * 112 + 'px'
             : 5 * 112 + 'px'
         )
+        : props.totalUltimateOnly
+        ? (
+          // For total-ultimate-only: calculate min-width based on all visible columns
+          (claimsType.length * 112) + // Claims type columns (collapsed)
+          (dashboardStore.underwriting_loss_ratios === 'Written' && dashboardStore.dashboards.uw_acc === 'uw'
+            ? 6 * 112  // Total Ultimate columns: Paid, O/S, Incurred, IBNR, Unearned, Ultimate
+            : 5 * 112) + 'px' // Total Ultimate columns: Paid, O/S, Incurred, IBNR, Ultimate
+        )
         : (
           112 * (claimsType.length + 1) +
           (<any>Object).values(margin).reduce((ps: number, s: number) => ps + s, 0) *
@@ -220,6 +245,14 @@ defineEmits(['onChangeCcrMargin']);
           dashboardStore.underwriting_loss_ratios === 'Written' && dashboardStore.dashboards.uw_acc === 'uw'
             ? 6 * 112 + 'px'
             : 5 * 112 + 'px'
+        )
+        : props.totalUltimateOnly
+        ? (
+          // For total-ultimate-only: calculate max-width based on all visible columns
+          (claimsType.length * 112) + // Claims type columns (collapsed)
+          (dashboardStore.underwriting_loss_ratios === 'Written' && dashboardStore.dashboards.uw_acc === 'uw'
+            ? 6 * 112  // Total Ultimate columns: Paid, O/S, Incurred, IBNR, Unearned, Ultimate
+            : 5 * 112) + 'px' // Total Ultimate columns: Paid, O/S, Incurred, IBNR, Ultimate
         )
         : (
           112 * (claimsType.length + 1) +
