@@ -2,6 +2,7 @@
   <div 
     class="dashboard-table-element"
     :class="{ 'lock': elementInfo.lock }"
+    :data-element-id="elementInfo.id"
     :style="{
       width: elementInfo.width + 'px',
       height: elementInfo.height + 'px',

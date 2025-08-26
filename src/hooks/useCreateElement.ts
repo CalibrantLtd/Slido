@@ -2,7 +2,7 @@ import { storeToRefs } from 'pinia'
 import { nanoid } from 'nanoid'
 import { useMainStore, useSlidesStore } from '@/store'
 import { getImageSize } from '@/utils/image'
-import type { PPTLineElement, PPTElement, TableCell, TableCellStyle, PPTShapeElement, ChartType } from '@/types/slides'
+import type { PPTLineElement, PPTElement, TableCell, TableCellStyle, PPTShapeElement, ChartType, PPTDashboardTableElement } from '@/types/slides'
 import { type ShapePoolItem, SHAPE_PATH_FORMULAS } from '@/configs/shapes'
 import type { LinePoolItem } from '@/configs/lines'
 import { CHART_DEFAULT_DATA } from '@/configs/chart'
@@ -311,6 +311,27 @@ export default () => {
     })
   }
 
+  /**
+   * Create dashboard table element
+   */
+  const createDashboardTableElement = () => {
+    const width = 800
+    const height = 600
+
+    createElement({
+      type: 'dashboard-table',
+      id: nanoid(10),
+      width,
+      height,
+      rotate: 0,
+      left: (viewportSize.value - width) / 2,
+      top: (viewportSize.value * viewportRatio.value - height) / 2,
+      props: {
+        overflow: 'auto',
+      },
+    })
+  }
+
   return {
     createImageElement,
     createChartElement,
@@ -321,5 +342,6 @@ export default () => {
     createLatexElement,
     createVideoElement,
     createAudioElement,
+    createDashboardTableElement,
   }
 }

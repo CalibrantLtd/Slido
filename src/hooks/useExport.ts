@@ -6,7 +6,7 @@ import pptxgen from 'pptxgenjs'
 import tinycolor from 'tinycolor2'
 import { toPng, toJpeg } from 'html-to-image'
 import { useSlidesStore } from '@/store'
-import type { PPTElementOutline, PPTElementShadow, PPTElementLink, Slide } from '@/types/slides'
+import type { PPTElementOutline, PPTElementShadow, PPTElementLink, Slide, PPTDashboardTableElement } from '@/types/slides'
 import { getElementRange, getLineElementPath, getTableSubThemeColor } from '@/utils/element'
 import { type AST, toAST } from '@/utils/htmlParser'
 import { type SvgPoints, toPoints } from '@/utils/svgPathParser'
@@ -377,9 +377,22 @@ export default () => {
     return url.match(regex) !== null
   }
 
+  const captureDashboardTable = async (elementId: string, width: number, height: number) => {
+    const element = document.querySelector(`.dashboard-table-element[data-element-id="${elementId}"] .table-panel`)
+    if (!element) return null
+    
+    return await toPng(element as HTMLElement, {
+      quality: 1.0,
+      width,
+      height,
+      fontEmbedCSS: '',
+    })
+  }
+
   // Export PPTX file
-  const exportPPTX = (_slides: Slide[], masterOverwrite: boolean, ignoreMedia: boolean) => {
+  const exportPPTX = async (_slides: Slide[], masterOverwrite: boolean, ignoreMedia: boolean) => {
     exporting.value = true
+    
     const pptx = new pptxgen()
 
     if (viewportRatio.value === 0.625) pptx.layout = 'LAYOUT_16x10'
@@ -834,6 +847,28 @@ export default () => {
           const audioExts = ['mp3', 'm4a', 'mp4', 'wav', 'wma']
           if (options.extn && [...videoExts, ...audioExts].includes(options.extn)) {
             pptxSlide.addMedia(options)
+          }
+        }
+
+        else if (el.type === 'dashboard-table') {
+          const capturedImage = await captureDashboardTable(el.id, el.width, el.height)
+          
+          if (capturedImage) {
+            const options: pptxgen.ImageProps = {
+              data: capturedImage,
+              x: el.left / ratioPx2Inch.value,
+              y: el.top / ratioPx2Inch.value,
+              w: el.width / ratioPx2Inch.value,
+              h: el.height / ratioPx2Inch.value,
+            }
+            
+            if (el.rotate) options.rotate = el.rotate
+            if (el.link) {
+              const linkOption = getLinkOption(el.link)
+              if (linkOption) options.hyperlink = linkOption
+            }
+            
+            pptxSlide.addImage(options)
           }
         }
       }

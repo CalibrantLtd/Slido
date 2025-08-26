@@ -630,8 +630,14 @@ export interface PPTAudioElement extends PPTBaseElement {
   ext?: string
 }
 
+export interface PPTDashboardTableElement extends PPTBaseElement {
+  type: 'dashboard-table'
+  props?: {
+    overflow?: string
+  }
+}
 
-export type PPTElement = PPTTextElement | PPTImageElement | PPTShapeElement | PPTLineElement | PPTChartElement | PPTTableElement | PPTLatexElement | PPTVideoElement | PPTAudioElement
+export type PPTElement = PPTTextElement | PPTImageElement | PPTShapeElement | PPTLineElement | PPTChartElement | PPTTableElement | PPTLatexElement | PPTVideoElement | PPTAudioElement | PPTDashboardTableElement
 
 export type AnimationType = 'in' | 'out' | 'attention'
 export type AnimationTrigger = 'click' | 'meantime' | 'auto'
