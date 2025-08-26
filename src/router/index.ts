@@ -11,6 +11,16 @@ const router = createRouter({
       path: '/editor',
       name: 'editor',
       component: () => import('@/views/Editor/index.vue')
+    },
+    {
+      path: '/reports',
+      name: 'reports',
+      component: () => import('@/views/Reports/index.vue')
+    },
+    {
+      path: '/templates',
+      name: 'templates',
+      component: () => import('@/views/Templates/index.vue')
     }
   ]
 })

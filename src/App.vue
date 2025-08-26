@@ -2,7 +2,7 @@
   <template v-if="slides.length">
     <Screen v-if="screening" />
     <template v-else-if="_isPC">
-      <Editor />
+      <router-view />
     </template>
     <Mobile v-else />
   </template>
@@ -11,6 +11,7 @@
 
 <script lang="ts" setup>
 import { onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useScreenStore, useMainStore, useSnapshotStore, useSlidesStore } from '@/store'
 import { LOCALSTORAGE_KEY_DISCARDED_DB } from '@/configs/storage'
@@ -24,6 +25,7 @@ import Screen from './views/Screen/index.vue'
 import Mobile from './views/Mobile/index.vue'
 import FullscreenSpin from '@/components/FullscreenSpin.vue'
 
+const router = useRouter()
 const _isPC = isPC()
 
 const mainStore = useMainStore()
@@ -38,6 +40,13 @@ if (import.meta.env.MODE !== 'development') {
 }
 
 onMounted(async () => {
+  const urlParams = new URLSearchParams(window.location.search)
+  const targetPath = urlParams.get('path')
+  
+  if (targetPath && targetPath !== '/editor') {
+    router.push(targetPath)
+  }
+
   api.getFileData('slides').then((slides: Slide[]) => {
     slidesStore.setSlides(slides)
   })

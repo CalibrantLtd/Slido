@@ -3,6 +3,9 @@ import { ref, computed, watch } from 'vue';
 import { SlidoAuthService } from '@/utils/auth';
 import { api } from '@/services/api';
 import moment from 'moment';
+import { usePortfolioStore } from './portfolio';
+import ClaimsCalculation from '@/calculations/Claims/ClaimsCalculation';
+import { targetCCR, targetNLR } from '../calculations/Claims/TargetCalculation';
 
 interface DashboardData {
   [key: string]: any;
@@ -23,11 +26,16 @@ interface PortfolioData {
   yearsOfProjections?: number;
   isAve?: boolean;
   claimsNature?: string[];
+  exposure?: Array<{ name: string; method: string }>;
+  normaliseSelection?: boolean[];
   filterOptions?: { [key: string]: string[] };
-  normaliseSelection?: { [key: string]: boolean };
+  parameters?: any;
+  uw_month?: any[];
+  acc_month?: any[];
 }
 
 export const useDashboardStore = defineStore('slido-dashboard', () => {
+  const portfolioStore = usePortfolioStore();
   const isLoaded = ref(false);
   const isLoading = ref(false);
   const error = ref<string | null>(null);
@@ -40,6 +48,7 @@ export const useDashboardStore = defineStore('slido-dashboard', () => {
   const yearly_dashboard_data = ref<DashboardData>({});
   const quarterly_dashboard_data = ref<DashboardData>({});
   const binder_dashboard_data = ref<DashboardData>({});
+  //SAME AS IN MAIN
   const isBindedYears = ref(false);
 
   const currentPortfolio = ref<PortfolioData | null>(null);
@@ -56,30 +65,67 @@ export const useDashboardStore = defineStore('slido-dashboard', () => {
   const showColumnTotal = ref(false);
   const totalMargin = ref(0);
   
-  const claimsType = computed<string[]>(() => currentPortfolio.value?.claimsNature || ['ATTRITIONAL', 'LARGE']);
+  const claimsType = computed<string[]>(() => portfolioStore.parameters.claims_nature);
+  const normalise: any = computed(() =>
+    claimsType.value.slice(1).filter((x, i) => portfolioStore.normaliseSelection[i])
+  );
+
+  const data_CommissionColumns: any = ref(null);
+  
+  const graphConfig = ref({
+    isGLR: true,
+    isNormalised: true,
+  });
+
+  const chart_data = ref<any[]>([]);
   
   const availableFilters = ref<{ [key: string]: string[] }>({});
   const selectedFilters = ref<{ [key: string]: string[] }>({});
   const filterAccidentUnderwriting = ref<'uw' | 'acc'>('uw');
-  const filterPeriod = ref<'month' | 'quarter' | 'year'>('quarter');
   
   const ccrNlr = ref<'CCR' | 'NLR'>('CCR');
   
   const dashboards = ref({
-    mqy: 'quarter' as 'month' | 'quarter' | 'year',
-    uw_acc: 'uw' as 'uw' | 'acc',
-    ccr_nlr: 'CCR' as 'CCR' | 'NLR',
-    gwpnwp: 'GWP' as 'GWP' | 'NWP',
-    ratio_amount: 'ratio' as 'ratio' | 'amount',
-    seasonFactor: false
+    uw_acc: 'uw', //accident or underwriting
+    mqy: 'quarter', //month_quarter_year
+    ratio_amount: 'ratios',
+    seasonFactor: false,
+    filters: null,
+    datefilters: { uw: null, acc: null },
+    calendardatefilters: null,
+    gwpnwp: 'GWP',
+    ccr_nlr: 'CCR',
   });
   
   const underwriting_loss_ratios = ref<'Written' | 'Earned'>('Written');
   const isShowingExposure = ref(false);
-  const offMarginGWPGEP = ref(0);
-  const offMarginAprioriCCR = ref(0);
-  const normalise = ref<boolean[]>([false, true, true]);
+  const offMarginGWPGEP = computed(() => {
+    let sum = 0;
+    if (!visibleColumns.value?.includes(1)) {
+      sum += 112;
+    }
+    if (!visibleColumns.value?.includes(2)) {
+      sum += 112;
+    }
+    return sum;
+  });
+  
+  const offMarginAprioriCCR = computed(() => {
+    let sum = offMarginGWPGEP.value;
+    if (!visibleColumns.value?.includes(3)) {
+      sum += 224;
+    }
+    if (!visibleColumns.value?.includes(4)) {
+      sum += 112;
+    }
+    return sum;
+  });
   const seasonality_parameters = ref<number[][]>([]);
+  const large_threshold = ref<any>(null);
+  const large_method = ref<any>(null);
+  const UWCommissionColumns = ref<string[]>([]);
+  const unDataFilters = ref<any>({});
+  const unDateFilters = ref<any>({});
   
   const isYearSubTotal = ref(false);
   const isYearSubTotalUp = ref(false);
@@ -142,17 +188,11 @@ export const useDashboardStore = defineStore('slido-dashboard', () => {
     }
   }, { immediate: true });
 
-  watch(filterPeriod, (newPeriod, oldPeriod) => {
+  watch(() => dashboards.value.mqy, (newMqy, oldMqy) => {
     if (isLoaded.value && monthly_dashboard_data.value.length > 0) {
       transformDataToDate();
     }
   });
-
-  watch(() => dashboards.value.mqy, (newMqy, oldMqy) => {
-    if (filterPeriod.value !== newMqy) {
-      filterPeriod.value = newMqy;
-    }
-  }, { immediate: true });
 
   watch(selectedFiltersComputed, (newFilters, oldFilters) => {
     if (isLoaded.value && currentPortfolio.value) {
@@ -189,6 +229,7 @@ export const useDashboardStore = defineStore('slido-dashboard', () => {
       const parsed = JSON.parse(portfolioData);
       return parsed;
     } catch (error) {
+      console.error('Error parsing portfolio data:', error);
       return null;
     }
   }
@@ -216,7 +257,7 @@ export const useDashboardStore = defineStore('slido-dashboard', () => {
         include_projections: portfolioData.includeProjections ?? true,
         underwriting_month_filter: underwriting_filters,
         filters_hierarchy: getFiltersHierarchy(),
-        normalised_CCR: ['ATTRITIONAL', 'LARGE'],
+        normalised_CCR: getNormalisedForApi(portfolioData),
         report_date: portfolioData.currentMonth || "2024-02-01",
         years_of_projections: portfolioData.isAve ? 0 : (portfolioData.yearsOfProjections || 0),
         claim_category: 0,
@@ -228,12 +269,26 @@ export const useDashboardStore = defineStore('slido-dashboard', () => {
 
       monthly_dashboard_data.value = res.data[0].data;
       dashboard_data_column.value = res.data[0].column;
-
       let p_data = JSON.parse(res.data[1]);
+      seasonality_parameters.value = p_data.SEASONALITY.map((x: string) => x.split(';').map(Number));
+      large_threshold.value = p_data.LARGE_THRESHOLD;
+      large_method.value = p_data.LARGE_METHOD;
+      UWCommissionColumns.value = Object.keys(dashboard_data_column.value).filter((key: string) => key.includes('uws.COM'));
+      data_CommissionColumns.value = Object.keys(dashboard_data_column.value).filter((key: string) =>
+        key.includes('uw_data.COM')
+      );
 
-      filterPeriod.value = dashboards.value.mqy;
-
+      unDataFilters.value = res.data[0].unfilter;
+      unDateFilters.value = res.data[0].date_unfilter;
       transformDataToDate();
+
+      // Note: AVE mode not available in Slido yet
+      // if (portfolioStore.isAve) {
+      //   await dashboard_ave_store.loadDashboard();
+      // }
+
+      // Note: forwardLookingWithFilter not available in Slido yet
+      // forwardLookingWithFilter(filters_hierarchy);
 
       currentPortfolio.value = portfolioData;
 
@@ -247,11 +302,8 @@ export const useDashboardStore = defineStore('slido-dashboard', () => {
     }
   }
 
+  //SAME AS IN MAIN 
   function transformDataToDate() {
-    if (!monthly_dashboard_data.value || monthly_dashboard_data.value.length === 0) {
-      return;
-    }
-
     let sliced_dashboard_data = monthly_dashboard_data.value;
 
     yearly_dashboard_data.value = convertToPeriod('year', sliced_dashboard_data);
@@ -260,33 +312,14 @@ export const useDashboardStore = defineStore('slido-dashboard', () => {
     totalData.value = calculateTotal(sliced_dashboard_data, 'Total', 'Total');
 
     dashboard_data.value = sliced_dashboard_data;
-    
-    if (filterPeriod.value == 'quarter') {
+    if (dashboards.value.mqy == 'quarter') {
       dashboard_data.value = quarterly_dashboard_data.value;
-    } else if (filterPeriod.value == 'year') {
+    } else if (dashboards.value.mqy == 'year') {
       if (isBindedYears.value) {
         dashboard_data.value = binder_dashboard_data.value;
       } else {
         dashboard_data.value = yearly_dashboard_data.value;
       }
-    }
-    
-    if (monthly_dashboard_data.value.length > 0) {
-      const totalRow = monthly_dashboard_data.value[0].map((_: any, colIndex: number) => {
-        if (colIndex === 0) return 'Total';
-        if (colIndex === 1) return 'Total';
-        
-        let sum = 0;
-        Object.values(dashboard_data.value).forEach((row: any) => {
-          if (row && row[colIndex] !== undefined && !isNaN(row[colIndex])) {
-            sum += row[colIndex];
-          }
-        });
-        return sum;
-      });
-      totalData.value = totalRow;
-    } else {
-      totalData.value = null;
     }
   }
 
@@ -338,7 +371,7 @@ export const useDashboardStore = defineStore('slido-dashboard', () => {
   }
   
   function setPeriod(period: 'month' | 'quarter' | 'year') {
-    filterPeriod.value = period;
+    dashboards.value.mqy = period;
     
     if (monthly_dashboard_data.value && monthly_dashboard_data.value.length > 0) {
       transformDataToDate();
@@ -347,6 +380,83 @@ export const useDashboardStore = defineStore('slido-dashboard', () => {
   
   function setPortfolioData(portfolioData: PortfolioData | null) {
     currentPortfolio.value = portfolioData;
+    
+    // Update portfolio store parameters with actual portfolio data
+    if (portfolioData) {
+      // Create portfolio data structure that matches what onSetPortfolio expects
+      const portfolioDataForStore = {
+        dictionary: portfolioData.filterOptions || {},
+        parameters: {
+          claims_nature: portfolioData.claimsNature || ['ATTRITIONAL', 'LARGE'],
+          exposure: portfolioData.exposure || [
+            { name: 'Total Risk Count', method: 'sum' },
+            { name: 'Average GWP', method: 'average' }
+          ],
+          default_dashboard: {
+            accident_underwriting: portfolioData.uwAcc || 'uw',
+            cohort: 'quarter'
+          },
+          ...portfolioData.parameters // Include any other parameters
+        },
+        uw_month: portfolioData.uw_month || [],
+        acc_month: portfolioData.acc_month || []
+      };
+      
+      // Call onSetPortfolio to properly populate normaliseSelection
+      portfolioStore.onSetPortfolio(portfolioDataForStore);
+      
+      // IMPORTANT: Override normaliseSelection with the exact values from the cookie
+      // This ensures we use the same normalization settings as the main app
+      if (portfolioData.normaliseSelection && portfolioData.claimsNature) {
+        // The normaliseSelection array corresponds to claims_nature.slice(1)
+        // So if claims_nature = ['ATTRITIONAL', 'LARGE'] and normaliseSelection = [true]
+        // It means LARGE is selected, and ATTRITIONAL is not in the array (excluded by slice(1))
+        const expectedLength = portfolioData.claimsNature.length - 1; // slice(1) in the computed
+        
+        if (portfolioData.normaliseSelection.length === expectedLength) {
+          portfolioStore.normaliseSelection = [...portfolioData.normaliseSelection];
+        } else {
+          // Handle the mismatch by padding or truncating the array
+          const newNormaliseSelection = Array(expectedLength).fill(false);
+          
+          // Copy existing values, padding with false if too short, or truncating if too long
+          for (let i = 0; i < Math.min(portfolioData.normaliseSelection.length, expectedLength); i++) {
+            newNormaliseSelection[i] = portfolioData.normaliseSelection[i];
+          }
+          
+          // If the original array was too short, set all missing items to true
+          if (portfolioData.normaliseSelection.length < expectedLength) {
+            for (let i = portfolioData.normaliseSelection.length; i < expectedLength; i++) {
+              newNormaliseSelection[i] = true;
+            }
+          }
+          
+          portfolioStore.normaliseSelection = newNormaliseSelection;
+        }
+      }
+    }
+  }
+
+  function getNormalisedForApi(portfolioData: PortfolioData): number[] {
+    if (!portfolioData.normaliseSelection || !portfolioData.claimsNature) {
+      // Find the index of LARGE in claims_nature, fallback to 1 if not found
+      const largeIndex = portfolioData.claimsNature?.indexOf('LARGE') ?? 1;
+      return [largeIndex];
+    }
+    
+    const selectedIndexes: number[] = [];
+    for (let i = 0; i < portfolioData.normaliseSelection.length; i++) {
+      if (portfolioData.normaliseSelection[i]) {
+        selectedIndexes.push(i);
+      }
+    }
+    
+    if (selectedIndexes.length === 0) {
+      const largeIndex = portfolioData.claimsNature?.indexOf('LARGE') ?? 1;
+      return [largeIndex];
+    }
+    
+    return selectedIndexes;
   }
 
   function convertFiltersToApiFormat() {
@@ -358,17 +468,17 @@ export const useDashboardStore = defineStore('slido-dashboard', () => {
   function getBinders(data: any[]): string[] {
     return [];
   }
-
-  function convertToPeriod(period: string, data: any[]): { [key: number]: any[] } {
+  //SAME AS IN MAIN
+  function convertToPeriod(period, data) {
     let format = 'YYYY';
-    if (period === 'quarter') {
+    if (period == 'quarter') {
       format = '[Q]Q-YYYY';
     }
     
-    const periods: string[] = [];
+    let periods: string[] = [];
     
     if (period === 'binder') {
-      periods.push(...getBinders(data.map((x) => x[0])));
+      periods = getBinders(data.map((x) => x[0]));
       if (periods.length === 0) {
         for (const i in data) {
           periods.push(moment(data[i][dashboard_data_column.value['months.MONTH']], 'MMM-YYYY').format(format));
@@ -380,7 +490,9 @@ export const useDashboardStore = defineStore('slido-dashboard', () => {
       }
     }
     
-    const sections = [];
+    let newData: any = {};
+
+    const sections: any[] = [];
     let start = 0;
 
     for (let i = 1; i <= periods.length; i++) {
@@ -389,24 +501,263 @@ export const useDashboardStore = defineStore('slido-dashboard', () => {
         start = i;
       }
     }
-
-    const result: { [key: number]: any[] } = {};
     
     sections.forEach((p, i) => {
       const startIndex = p['start'];
       const endIndex = p['end'] + 1;
       let newRowData = data.slice(startIndex, endIndex);
-      
-      result[endIndex - 1] = calculateTotal(newRowData, p['value'], data[endIndex - 1][0]);
+      newData[endIndex - 1] = calculateTotal(newRowData, p['value'], data[endIndex - 1][0]);
     });
-    
-    return result;
+
+    return newData;
+  }
+
+  //SAME AS IN MAIN
+  function numberWithRatios(x: number, isValue: boolean) {
+    if (isValue) {
+      return x;
+    } else {
+      return (x * 100).toFixed(1) + '%';
+    }
+  }
+
+  function seasAdjApriori(data_row: any, isValue: boolean) {
+    let ans = 0;
+    if (dashboards.value.ccr_nlr == 'CCR') {
+      data_row[dashboard_data_column.value['uw_data.GEP_AMOUNT']] != 0
+        ? (ans =
+            (claimsType.value
+              .map(
+                (x) =>
+                  data_row[dashboard_data_column.value['uw_data.' + x + '_MODEL']] *
+                  (!dashboards.value.seasonFactor ||
+                  (underwriting_loss_ratios.value == 'Written' && dashboards.value.uw_acc == 'uw')
+                    ? 1
+                    : data_row[dashboard_data_column.value['uw_data.' + x + '_seasonality']])
+              )
+              .reduce((ps: number, s: number) => ps + s, 0) +
+              data_CommissionColumns.value
+                .map((x) => data_row[dashboard_data_column.value[x]])
+                .reduce((ps: number, s: number) => ps + s, 0)) /
+            data_row[dashboard_data_column.value['uw_data.GEP_AMOUNT']])
+        : (ans = 0);
+    } else {
+      data_row[dashboard_data_column.value['uw_data.GEP_AMOUNT']] != 0
+        ? (ans =
+            claimsType.value
+              .map(
+                (x) =>
+                  data_row[dashboard_data_column.value['uw_data.' + x + '_MODEL']] *
+                  (!dashboards.value.seasonFactor ||
+                  (underwriting_loss_ratios.value == 'Written' && dashboards.value.uw_acc == 'uw')
+                    ? 1
+                    : data_row[dashboard_data_column.value['uw_data.' + x + '_seasonality']])
+              )
+              .reduce((ps: number, s: number) => ps + s, 0) /
+            (data_row[dashboard_data_column.value['uw_data.GEP_AMOUNT']] -
+              data_CommissionColumns.value
+                .map((x) => data_row[dashboard_data_column.value[x]])
+                .reduce((ps: number, s: number) => ps + s, 0)))
+        : (ans = 0);
+    }
+
+    return numberWithRatios(ans, isValue);
+  }
+
+  function seasAdjAprioriGLR(data_row: any, isValue: boolean) {
+    let ans = 0;
+    data_row[dashboard_data_column.value['uw_data.GEP_AMOUNT']] != 0
+      ? (ans =
+          claimsType.value
+            .map(
+              (x) =>
+                data_row[dashboard_data_column.value['uw_data.' + x + '_MODEL']] *
+                (!dashboards.value.seasonFactor &&
+                !(underwriting_loss_ratios.value == 'Written' && dashboards.value.uw_acc == 'uw')
+                  ? 1
+                  : data_row[dashboard_data_column.value['uw_data.' + x + '_seasonality']])
+            )
+            .reduce((ps: number, s: number) => ps + s, 0) / data_row[dashboard_data_column.value['uw_data.GEP_AMOUNT']])
+      : (ans = 0);
+
+    return numberWithRatios(ans, isValue);
+  }
+
+  function graphApriori(data_row: any, isValue: boolean) {
+    if (!graphConfig.value['isGLR']) {
+      return seasAdjAprioriGLR(data_row, isValue);
+    } else {
+      return seasAdjApriori(data_row, isValue);
+    }
+  }
+
+  function graphIncurred(idx: number, claimsCalculation: ClaimsCalculation) {
+    if (graphConfig.value['isGLR']) {
+      if (graphConfig.value['isNormalised']) {
+        const ans = claimsCalculation.normalisedCCRNLR(
+          idx,
+          dashboards.value.uw_acc,
+          underwriting_loss_ratios.value,
+          normalise.value,
+          dashboards.value.ccr_nlr,
+          dashboards.value.seasonFactor,
+          true
+        );
+        return numberWithRatios(ans, true) as number;
+      } else {
+        const ans = claimsCalculation.ccrNlr(
+          idx,
+          dashboards.value.uw_acc,
+          underwriting_loss_ratios.value,
+          dashboards.value.ccr_nlr,
+          true
+        );
+        return numberWithRatios(ans, true) as number;
+      }
+    } else {
+      if (graphConfig.value['isNormalised']) {
+        return (
+          claimsCalculation.ultimateTotal(
+            idx,
+            dashboards.value.uw_acc,
+            underwriting_loss_ratios.value,
+            normalise.value,
+            true
+          ) / claimsCalculation.gwpSumOrGEPAmount(idx, underwriting_loss_ratios.value, dashboards.value.uw_acc)
+        );
+      } else {
+        return (
+          claimsCalculation.ultimateTotal(idx, dashboards.value.uw_acc, underwriting_loss_ratios.value, null, true) /
+          claimsCalculation.gwpSumOrGEPAmount(idx, underwriting_loss_ratios.value, dashboards.value.uw_acc)
+        );
+      }
+    }
+  }
+
+  function targetData(temp: any) {
+    if (
+      portfolioStore.parameters &&
+      portfolioStore.parameters['target'] &&
+      portfolioStore.parameters['target']['target_value']
+    ) {
+      const paramTarget = portfolioStore.parameters['target'];
+      if (dashboards.value.ccr_nlr == 'CCR') {
+        temp['target'] = targetCCR(paramTarget['target_value'], paramTarget['target_commission']);
+      }
+
+      if (dashboards.value.ccr_nlr == 'NLR') {
+        temp['target'] = targetNLR(paramTarget['target_value'], paramTarget['target_commission']);
+      }
+    }
+  }
+
+  function setChartData() {
+    const claimsCalculation = new ClaimsCalculation(
+      dashboard_data.value,
+      dashboard_data_column.value,
+      claimsType.value
+    );
+
+    // Note: AVE mode not available in Slido yet
+    // const claimsCalculationAve = new ClaimsCalculation(
+    //   dashboard_ave_store.dashboard_data,
+    //   dashboard_data_column.value,
+    //   claimsType.value
+    // );
+
+    function targetData(temp: any) {
+      if (
+        portfolioStore.parameters &&
+        portfolioStore.parameters['target'] &&
+        portfolioStore.parameters['target']['target_value']
+      ) {
+        const paramTarget = portfolioStore.parameters['target'];
+        if (dashboards.value.ccr_nlr == 'CCR') {
+          temp['target'] = targetCCR(paramTarget['target_value'], paramTarget['target_commission']);
+        }
+
+        if (dashboards.value.ccr_nlr == 'NLR') {
+          temp['target'] = targetNLR(paramTarget['target_value'], paramTarget['target_commission']);
+        }
+      }
+    }
+
+    setTimeout(() => {
+      let obj: any = [];
+
+      // Note: AVE mode not available in Slido yet
+      // if (!portfolioStore.isAve) {
+        for (const idx in dashboard_data.value) {
+          const idxInt = parseInt(idx);
+          let temp = {
+            gwp: dashboard_data.value[idx][dashboard_data_column.value['uws.GWP_SUM']],
+            gep: dashboard_data.value[idx][dashboard_data_column.value['uw_data.GEP_AMOUNT']],
+            ccr: graphCCRNLR(idxInt, claimsCalculation) * 100,
+            incurred: graphIncurred(idxInt, claimsCalculation) * 100,
+            apriori: <any>graphApriori(dashboard_data.value[idx], true) * 100,
+            date: dashboard_data.value[idx][dashboard_data_column.value['months.MONTH']],
+          };
+          targetData(temp);
+          obj.push(temp);
+        }
+      // } else {
+      //   // AVE mode logic would go here
+      // }
+      chart_data.value = obj;
+    });
+  }
+
+  function graphCCRNLR(idx: number, claimsCalculation: ClaimsCalculation) {
+    if (!graphConfig.value['isGLR']) {
+      if (graphConfig.value['isNormalised']) {
+        return (
+          claimsCalculation.ultimateTotal(
+            idx,
+            dashboards.value.uw_acc,
+            underwriting_loss_ratios.value,
+            normalise.value
+          ) / claimsCalculation.gwpSumOrGEPAmount(idx, underwriting_loss_ratios.value, dashboards.value.uw_acc)
+        );
+      } else {
+        return (
+          claimsCalculation.ultimateTotal(idx, dashboards.value.uw_acc, underwriting_loss_ratios.value) /
+          claimsCalculation.gwpSumOrGEPAmount(idx, underwriting_loss_ratios.value, dashboards.value.uw_acc)
+        );
+      }
+    } else {
+      if (graphConfig.value['isNormalised']) {
+        const ans = claimsCalculation.normalisedCCRNLR(
+          idx,
+          dashboards.value.uw_acc,
+          underwriting_loss_ratios.value,
+          normalise.value,
+          dashboards.value.ccr_nlr,
+          dashboards.value.seasonFactor
+        );
+        return numberWithRatios(ans, true) as number;
+      } else {
+        const ans = claimsCalculation.ccrNlr(
+          idx,
+          dashboards.value.uw_acc,
+          underwriting_loss_ratios.value,
+          dashboards.value.ccr_nlr
+        );
+        return numberWithRatios(ans, true) as number;
+      }
+    }
   }
 
   function calculateTotal(data: any, date: string, month: string) {
     let totals = new Array(Object.keys(dashboard_data_column.value).length).fill(0);
 
     const exposureIndex = {};
+
+    // Do not sum exposure values, find the column index and not sum them
+    for (let i = 0; i < portfolioStore.getExposureLength(); i++) {
+      const exposure = portfolioStore.parameters['exposure'][i];
+      const columnName = 'uw_data.exposure.' + exposure['method'] + '.' + exposure['name'];
+      exposureIndex[dashboard_data_column.value[columnName]] = i;
+    }
 
     totals[0] = date;
     totals[1] = month;
@@ -418,6 +769,21 @@ export const useDashboardStore = defineStore('slido-dashboard', () => {
       numberOfRows++;
       row.forEach((value: any, columnIndex: number) => {
         if (columnIndex in exposureIndex) {
+          if (portfolioStore.parameters['exposure'][exposureIndex[columnIndex]]['method'] == 'sum') {
+            if (value > 0) {
+              totals[columnIndex] = (totals[columnIndex] || 0) + value;
+            }
+          } else if (portfolioStore.parameters['exposure'][exposureIndex[columnIndex]]['method'] == 'min') {
+            if (value > 0) {
+              totals[columnIndex] = Math.min(totals[columnIndex] || Number.POSITIVE_INFINITY, value);
+            }
+          } else if (portfolioStore.parameters['exposure'][exposureIndex[columnIndex]]['method'] == 'max') {
+            if (value > 0) {
+              totals[columnIndex] = Math.max(totals[columnIndex] || Number.NEGATIVE_INFINITY, value);
+            }
+          } else if (portfolioStore.parameters['exposure'][exposureIndex[columnIndex]]['method'] == 'avg') {
+            totals[columnIndex] = (totals[columnIndex] || 0) + value;
+          }
         } else if (typeof value === 'number') {
           totals[columnIndex] = (totals[columnIndex] || 0) + value;
         }
@@ -504,11 +870,22 @@ export const useDashboardStore = defineStore('slido-dashboard', () => {
     totalMargin,
     
     claimsType,
+    normalise,
+    data_CommissionColumns,
+    graphConfig,
+    chart_data,
+    numberWithRatios,
+    seasAdjApriori,
+    seasAdjAprioriGLR,
+    graphApriori,
+    graphIncurred,
+    targetData,
+    setChartData,
+    graphCCRNLR,
     
     availableFilters: availableFiltersComputed,
     selectedFilters: selectedFiltersComputed,
     filterAccidentUnderwriting,
-    filterPeriod,
     
     ccrNlr,
     changeccrnlr,
@@ -533,8 +910,12 @@ export const useDashboardStore = defineStore('slido-dashboard', () => {
     isShowingExposure,
     offMarginGWPGEP,
     offMarginAprioriCCR,
-    normalise,
     seasonality_parameters,
+    large_threshold,
+    large_method,
+    UWCommissionColumns,
+    unDataFilters,
+    unDateFilters,
     isYearSubTotal,
     isYearSubTotalUp,
     isQuarterSubTotal,
@@ -543,26 +924,79 @@ export const useDashboardStore = defineStore('slido-dashboard', () => {
     isBinderSubTotalUp,
     dashboardForwardLookings,
     
-    changeSeas: () => { dashboards.value.seasonFactor = !dashboards.value.seasonFactor; },
-    switch_ratio_amount: () => { dashboards.value.ratio_amount = dashboards.value.ratio_amount === 'ratio' ? 'amount' : 'ratio'; },
-    change_uw_acc: () => { 
-      const newMode = dashboards.value.uw_acc === 'uw' ? 'acc' : 'uw';
-      dashboards.value.uw_acc = newMode;
-      setAccidentUnderwriting(newMode);
+    changeSeas: () => { 
+      dashboards.value.seasonFactor = !dashboards.value.seasonFactor;
+      setChartData();
     },
-    
-    syncPeriods: () => {
-      if (filterPeriod.value !== dashboards.value.mqy) {
-        filterPeriod.value = dashboards.value.mqy;
+    switch_ratio_amount: async () => {
+      if (dashboards.value.ratio_amount == 'amount') {
+        dashboards.value.ratio_amount = 'ratios';
+      } else {
+        dashboards.value.ratio_amount = 'amount';
       }
     },
+    change_uw_acc: async () => {
+      if (isBindedYears.value) {
+        isBindedYears.value = false;
+        dashboards.value.uw_acc = 'acc';
+        // Note: amtFunc and amtLabel not available in Slido yet
+        // amtFunc.value = ['Paid', 'OS', 'Incurred', 'IBNR', 'Ultimate'];
+        // amtLabel.value = ['Paid', 'O/S', 'Incurred', 'IBNR', 'Ultimate'];
+        if (currentPortfolio.value) {
+          await loadDashboard(currentPortfolio.value);
+        }
+      } else if (dashboards.value.uw_acc == 'uw' && dashboards.value.mqy == 'year') {
+        isBindedYears.value = true;
+        if (underwriting_loss_ratios.value == 'Written') {
+          // Note: amtFunc and amtLabel not available in Slido yet
+          // amtFunc.value = ['Paid', 'OS', 'Incurred', 'IBNR', 'Unearned', 'Ultimate'];
+          // amtLabel.value = ['Paid', 'O/S', 'Incurred', 'IBNR', 'Unearned Expected Loss', 'Ultimate'];
+        }
+        if (currentPortfolio.value) {
+          await loadDashboard(currentPortfolio.value);
+        }
+      } else if (dashboards.value.uw_acc == 'acc') {
+        isBindedYears.value = false;
+        dashboards.value.uw_acc = 'uw';
+
+        if (underwriting_loss_ratios.value == 'Written') {
+          // Note: amtFunc and amtLabel not available in Slido yet
+          // amtFunc.value = ['Paid', 'OS', 'Incurred', 'IBNR', 'Unearned', 'Ultimate'];
+          // amtLabel.value = ['Paid', 'O/S', 'Incurred', 'IBNR', 'Unearned Expected Loss', 'Ultimate'];
+        }
+
+        if (currentPortfolio.value) {
+          await loadDashboard(currentPortfolio.value);
+        }
+      } else {
+        isBindedYears.value = false;
+        dashboards.value.uw_acc = 'acc';
+        // Note: amtFunc and amtLabel not available in Slido yet
+        // amtFunc.value = ['Paid', 'OS', 'Incurred', 'IBNR', 'Ultimate'];
+        // amtLabel.value = ['Paid', 'O/S', 'Incurred', 'IBNR', 'Ultimate'];
+        if (currentPortfolio.value) {
+          await loadDashboard(currentPortfolio.value);
+        }
+      }
+    },
+    
+    //SAME AS IN MAIN
     change_mqy: () => { 
-      const mqyOrder = ['month', 'quarter', 'year'];
-      const currentIndex = mqyOrder.indexOf(dashboards.value.mqy);
-      const newPeriod = mqyOrder[(currentIndex + 1) % mqyOrder.length] as 'month' | 'quarter' | 'year';
-      
-      dashboards.value.mqy = newPeriod;
-      filterPeriod.value = newPeriod;
+      if (dashboards.value.mqy == 'month') {
+        dashboards.value.mqy = 'year';
+      } else if (dashboards.value.mqy == 'quarter') {
+        dashboards.value.mqy = 'month';
+      } else {
+        dashboards.value.mqy = 'quarter';
+      }
+
+      isBindedYears.value = false;
+
+      transformDataToDate();
+      // Note: AVE mode not available in Slido yet
+      // if (portfolioStore.isAve) {
+      //   dashboard_ave_store.transformDataToDate();
+      // }
     },
     switch_gwpnwp_amount: () => { dashboards.value.gwpnwp = dashboards.value.gwpnwp === 'GWP' ? 'NWP' : 'GWP'; },
     underwritingLossRatiosChange: () => { underwriting_loss_ratios.value = underwriting_loss_ratios.value === 'Written' ? 'Earned' : 'Written'; },

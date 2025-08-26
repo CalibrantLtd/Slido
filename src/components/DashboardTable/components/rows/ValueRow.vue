@@ -654,7 +654,7 @@ watch(
           rowIndex,
           dashboardStore.dashboards.uw_acc,
           dashboardStore.underwriting_loss_ratios,
-          (claimsType || []).filter((_: string, index: number) => dashboardStore.normalise[index]),
+          dashboardStore.normalise,
           dashboardStore.dashboards.ccr_nlr,
           dashboardStore.dashboards.seasonFactor
         ),

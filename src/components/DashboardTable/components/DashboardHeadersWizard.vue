@@ -50,8 +50,6 @@ import UltimatesHeader from './headers/UltimatesHeader.vue';
 const dashboardStore = useDashboardStore();
 const portfolioStore = usePortfolioStore();
 
-dashboardStore.syncPeriods();
-
 // State for controlling column visibility in preview
 const showColumn = ref<{ [key: string]: boolean }>({});
 const margin = ref<{ [key: string]: number }>({});

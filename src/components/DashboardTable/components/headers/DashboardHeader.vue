@@ -16,14 +16,13 @@ defineProps<{
   totalMargin: number;
   leftColumnSize: number;
 }>();
-
 // computed values from stores
 const isBindedYears = computed<boolean>(() => dashboardStore.isBindedYears);
 const ratioAmount = computed(() => dashboardStore.dashboards.ratio_amount);
 const claimsType = computed<string[]>(() => portfolioStore.parameters.claims_nature);
-const normaliseSelection = computed<boolean[]>(() => dashboardStore.normalise);
+const normaliseSelection = computed<boolean[]>(() => portfolioStore.normaliseSelection);
 const seasonFactor = computed<boolean>(() => dashboardStore.dashboards.seasonFactor);
-const normalise = computed<boolean[]>(() => dashboardStore.normalise);
+const normalise = computed<boolean[]>(() => portfolioStore.normalise);
 const ccrnlr = computed<string>(() => dashboardStore.dashboards.ccr_nlr);
 const visibleColumns = computed(() => dashboardStore.visibleColumns);
 
@@ -45,23 +44,9 @@ function switchRatiosAmount() {
 }
 
 function onChangeNormalised(index: number, val: boolean) {
-  const newNormalise = [...dashboardStore.normalise];
-  newNormalise[index] = val;
-  dashboardStore.normalise = newNormalise;
+  portfolioStore.setNormalisedSelection(index, val);
 }
 
-function getNormalisedHeaderText() {
-  const normalisedClaims = claimsType.value.filter((_, index) => normalise.value[index]);
-  if (normalisedClaims.length === 0) {
-    return 'Normalised';
-  } else if (normalisedClaims.length === 1) {
-    return `${normalisedClaims[0]} Normalised`;
-  } else if (normalisedClaims.length === claimsType.value.length) {
-    return 'Normalised';
-  } else {
-    return `${normalisedClaims.join(' + ')} Normalised`;
-  }
-}
 
 function changeCurrData() {
   dashboardStore.change_uw_acc();
@@ -275,7 +260,7 @@ defineEmits(['onChangeCcrMargin']);
           </div>
         </div>
       </div>
-      <br />{{ getNormalisedHeaderText() }} <br />
+      <br />Normalised <br />
       <p v-if="dashboardStore.dashboards.uw_acc == 'acc'">Earned</p>
       <p v-else>
         {{ dashboardStore.underwriting_loss_ratios }}
