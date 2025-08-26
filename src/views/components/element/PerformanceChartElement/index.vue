@@ -35,8 +35,24 @@
           :height="elementInfo.height"
           :outline="elementInfo.outline"
         />
+        <div 
+          v-if="isEditMode && currentChartImage"
+          class="chart-image"
+          :style="{
+            width: '100%',
+            height: '100%',
+            backgroundImage: `url('${currentChartImage}')`,
+            backgroundSize: 'contain',
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'center',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            zIndex: 1001
+          }"
+        ></div>
         <PerformanceChart 
-          v-if="elementInfo.type === 'performance-chart' && hasData" 
+          v-else-if="elementInfo.type === 'performance-chart' && !isEditMode" 
           :chart-data="chartData"
           :title="elementInfo.chartTitle || 'Performance Results'"
           :subtitle="chartSubtitle"
@@ -54,6 +70,8 @@
           :show-gwp-bars="dashboardStore.graphConfig.showGwpBars"
           :show-gep-bars="dashboardStore.graphConfig.showGepBars"
           :show-seasonality-apriori="dashboardStore.graphConfig.showSeasonalityApriori"
+          :width="elementInfo.width"
+          :height="elementInfo.height"
         />
         <div 
           v-else
@@ -73,7 +91,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { type PPTElement } from '@/types/slides'
 import type { ContextmenuItem } from '@/components/Contextmenu/types'
 import PerformanceChart from '@/components/DashboardCharts/PerformanceChart.vue'
@@ -81,6 +99,7 @@ import ElementOutline from '@/views/components/element/ElementOutline.vue'
 import { useDashboardStore } from '@/store/dashboard'
 import { usePortfolioStore } from '@/store/portfolio'
 import { portfolioService } from '@/services/portfolioService'
+import { useSlidesStore } from '@/store/slides'
 
 const props = defineProps<{
   elementInfo: PPTElement & {
@@ -110,22 +129,31 @@ const props = defineProps<{
 const elementRef = ref<HTMLElement>()
 const dashboardStore = useDashboardStore()
 const portfolioStore = usePortfolioStore()
+const slidesStore = useSlidesStore()
 
 const hasData = computed(() => {
-  return (dashboardStore.chart_data && dashboardStore.chart_data.length > 0) || 
-         (dashboardStore.dashboard_data && Object.keys(dashboardStore.dashboard_data).length > 0)
+  const snapshot = (props.elementInfo as any)._snapshot
+  const chartData = snapshot?.chart_data ?? dashboardStore.chart_data
+  const dashboardData = snapshot?.dashboard_data ?? dashboardStore.dashboard_data
+  
+  return (chartData && chartData.length > 0) || 
+         (dashboardData && Object.keys(dashboardData).length > 0)
 })
 
 const chartData = computed(() => {
-  if (dashboardStore.chart_data && dashboardStore.chart_data.length > 0) {
-    return dashboardStore.chart_data
+  const snapshot = (props.elementInfo as any)._snapshot
+  const chartDataFromSnapshot = snapshot?.chart_data ?? dashboardStore.chart_data
+  const dashboardDataFromSnapshot = snapshot?.dashboard_data ?? dashboardStore.dashboard_data
+  
+  if (chartDataFromSnapshot && chartDataFromSnapshot.length > 0) {
+    return chartDataFromSnapshot
   }
   
   if (!hasData.value) {
     return []
   }
   
-  const data = dashboardStore.dashboard_data
+  const data = dashboardDataFromSnapshot
   const chartDataPoints: any[] = []
   
   Object.keys(data).forEach((key, index) => {
@@ -162,6 +190,48 @@ const mqy = computed(() => dashboardStore.dashboards?.mqy || 'month')
 const isAve = computed(() => (portfolioStore as any).isAve || false)
 const gwpnwp = computed(() => dashboardStore.dashboards?.gwpnwp || 'GWP')
 const showSeasonality = computed(() => dashboardStore.dashboards?.seasonFactor || false)
+
+const isEditMode = computed(() => {
+  // Check if we're in an iframe (both preview and edit are in iframes)
+  const inIframe = typeof window !== 'undefined' && window.parent !== window
+  
+  if (!inIframe) {
+    return false
+  }
+  
+  // Check URL parameters to distinguish between preview and edit
+  const urlParams = new URLSearchParams(window.location.search)
+  const mode = urlParams.get('mode')
+  
+  // Edit mode has mode=report parameter
+  return mode === 'report'
+})
+
+const currentChartImage = computed(() => {
+  if (!isEditMode.value) {
+    return null
+  }
+  
+  if (!slidesStore.chartImages || typeof slidesStore.chartImages !== 'object') {
+    return null
+  }
+  
+  const image: string | undefined = slidesStore.chartImages[props.elementInfo.id]
+  
+  // Handle reactive proxy objects by converting to plain string
+  let imageString: string | undefined = image
+  if (image && typeof image === 'object' && image !== null) {
+    // Try to extract the string value from reactive proxy
+    imageString = (image as any).value || (image as any).toString()
+  }
+  
+  // Ensure the image is a string (base64 data URL)
+  if (typeof imageString === 'string' && imageString.startsWith('data:image')) {
+    return imageString
+  }
+  
+  return null
+})
 
 
 onMounted(async () => {
@@ -255,11 +325,12 @@ const handleSelectElement = (e: MouseEvent | TouchEvent, canMove = true) => {
   pointer-events: auto;
 }
 
-.mock-chart {
+.chart-image {
   background-color: #f8f9fa;
   border: 1px solid #e9ecef;
   border-radius: 4px;
 }
+
 .performance-chart-element .element-content {
   width: 100% !important;
   height: 100% !important;

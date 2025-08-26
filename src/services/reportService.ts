@@ -19,6 +19,7 @@ export interface Report {
   createdAt: Date
   pptData: Blob
   slideImages?: string[]
+  chartImages?: Record<string, string>
   slides?: any[] // Store slides data for editing
 }
 

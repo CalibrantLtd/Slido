@@ -37,6 +37,8 @@ interface Props {
   showGwpBars?: boolean;
   showGepBars?: boolean;
   showSeasonalityApriori?: boolean;
+  width?: number;
+  height?: number;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -56,6 +58,8 @@ const props = withDefaults(defineProps<Props>(), {
   showGwpBars: true,
   showGepBars: true,
   showSeasonalityApriori: true,
+  width: undefined,
+  height: undefined,
 })
 
 const showSeasonality = ref(props.showSeasonality)
@@ -122,8 +126,8 @@ function createChart() {
   }
 
   const chartDiv = document.getElementById('chartdiv');
-  const containerWidth = chartDiv?.clientWidth || 800;
-  const containerHeight = chartDiv?.clientHeight || 600;
+  const containerWidth = props.width || chartDiv?.offsetWidth || chartDiv?.clientWidth || 800;
+  const containerHeight = props.height || chartDiv?.offsetHeight || chartDiv?.clientHeight || 600;
 
   root = am5.Root.new('chartdiv');
   if (root._logo) {
@@ -155,7 +159,7 @@ function createChart() {
   });
   titleLabel = am5.Label.new(root, {
     text: "",
-    fontSize: 14,
+    fontSize: 10,
     textAlign: 'center',
     x: am5.percent(50),
     centerX: am5.percent(50),
@@ -178,7 +182,7 @@ function createChart() {
 
   const scrollbarX = am5.Scrollbar.new(root, {
     orientation: 'horizontal',
-    height: 6,
+    height: 2,
   });
 
   dashboardChart.set('scrollbarX', scrollbarX);
@@ -186,7 +190,7 @@ function createChart() {
 
   const scrollbarY = am5.Scrollbar.new(root, {
     orientation: 'vertical',
-    width: 6,
+    width: 2,
   });
 
   dashboardChart.set('scrollbarY', scrollbarY);
@@ -194,9 +198,9 @@ function createChart() {
     am5xy.CategoryAxis.new(root, {
       categoryField: 'date',
       renderer: am5xy.AxisRendererX.new(root, {
-        minGridDistance: 30,
-        cellStartLocation: 0.2,
-        cellEndLocation: 0.8,
+        minGridDistance: 20,
+        cellStartLocation: 0.1,
+        cellEndLocation: 0.9,
       }),
       tooltip: am5.Tooltip.new(root, {}),
     })
@@ -206,7 +210,7 @@ function createChart() {
     rotation: -90,
     centerY: am5.p50,
     centerX: am5.p50,
-    fontSize: 8,
+    fontSize: 5,
   });
 
   let yAxis = dashboardChart.yAxes.push(
@@ -214,7 +218,7 @@ function createChart() {
       renderer: am5xy.AxisRendererY.new(root, {
         opposite: true,
         cellStartLocation: 0,
-        minGridDistance: 30,
+        minGridDistance: 20,
       }),
       numberFormat: '#.0a',
       tooltip: am5.Tooltip.new(root, {}),
@@ -231,7 +235,7 @@ function createChart() {
     am5xy.ValueAxis.new(root, {
       renderer: am5xy.AxisRendererY.new(root, {
         cellStartLocation: 0,
-        minGridDistance: 30,
+        minGridDistance: 20,
       }),
       numberFormat: "#'%'",
       min: 0,
@@ -497,24 +501,31 @@ function createChart() {
     am5.Legend.new(root, {
       x: am5.percent(50),
       centerX: am5.p50,
-      paddingLeft: 20,
-      paddingRight: 20,
+      paddingLeft: 2,
+      paddingRight: 2,
+      paddingTop: 0,
+      paddingBottom: 0,
     })
   );
   legend.data.setAll(dashboardChart.series.values);
   legend.valueLabels.template.setAll({
-    width: 20,
+    width: 10,
     textAlign: 'left',
-    paddingLeft: 3,
-    fontSize: 5,
+    paddingLeft: 1,
+    fontSize: 3,
   });
   legend.labels.template.setAll({
-    fontSize: 5,
-    maxWidth: 120,
+    fontSize: 3,
+    maxWidth: 60,
   });
   legend.itemContainers.template.setAll({
-    marginRight: 1,
-    maxWidth: 140,
+    marginRight: 0,
+    maxWidth: 80,
+  });
+  
+  legend.markers.template.setAll({
+    width: 6,
+    height: 6,
   });
 
   seriesNull.data.setAll(data);
@@ -533,6 +544,53 @@ function createChart() {
     comp_seriesAttritional!.data.setAll(data);
     comp_seriesIncurred!.data.setAll(data);
   }
+
+  setTimeout(() => {
+    if (root) {
+      root.resize();
+    }
+  }, 10);
+  const forceCanvasDimensions = () => {
+    const viewportElement = chartDiv?.closest('.viewport');
+    if (!viewportElement) return; 
+    
+    const canvases = chartDiv?.querySelectorAll('canvas');
+    canvases?.forEach(canvas => {
+      const currentWidth = chartDiv?.offsetWidth || chartDiv?.clientWidth || 800;
+      const currentHeight = chartDiv?.offsetHeight || chartDiv?.clientHeight || 600;
+      canvas.width = currentWidth;        
+      canvas.style.width = currentWidth + 'px';   
+      canvas.style.height = currentHeight + 'px';
+    });
+  };
+
+  setTimeout(() => {
+    if (root) {
+      root.resize();
+      forceCanvasDimensions();
+    }
+  }, 50);
+  
+  setTimeout(() => {
+    if (root) {
+      root.resize();
+      forceCanvasDimensions();
+    }
+  }, 100);
+  
+  setTimeout(() => {
+    if (root) {
+      root.resize();
+      forceCanvasDimensions();
+    }
+  }, 200);
+  
+  setTimeout(() => {
+    if (root) {
+      root.resize();
+      forceCanvasDimensions();
+    }
+  }, 500);
 }
 
 watch(
@@ -540,6 +598,11 @@ watch(
   () => {
     if (props.chartData.length != 0) {
       createChart();
+      setTimeout(() => {
+        if (root) {
+          root.resize();
+        }
+      }, 50);
     }
   },
   { deep: true }
@@ -557,18 +620,65 @@ onMounted(() => {
   setTimeout(() => {
     if (props.chartData.length != 0) {
       createChart();
+      setTimeout(() => {
+        if (root) {
+          root.resize();
+        }
+      }, 50);
+      setTimeout(() => {
+        if (root) {
+          root.resize();
+        }
+      }, 150);
+      setTimeout(() => {
+        if (root) {
+          root.resize();
+        }
+      }, 300);
     }
-  }, 100);
+  }, 200);
   
-  const resizeObserver = new ResizeObserver(() => {
+  const resizeObserver = new ResizeObserver((entries) => {
     if (root) {
       root.resize();
+      
+      const entry = entries[0];
+      if (entry) {
+        const { width, height } = entry.contentRect;
+        const canvases = chartDiv?.querySelectorAll('canvas');
+        canvases?.forEach(canvas => {
+          canvas.width = width;                
+          canvas.height = height;
+          canvas.style.width = width + 'px';
+          canvas.style.height = height + 'px';
+        });
+      }
     }
   });
   
   const chartDiv = document.getElementById('chartdiv');
   if (chartDiv) {
     resizeObserver.observe(chartDiv);
+    
+    const mutationObserver = new MutationObserver(() => {
+      const viewportElement = chartDiv?.closest('.viewport');
+      if (!viewportElement) return; 
+      
+      const canvases = chartDiv.querySelectorAll('canvas');
+      canvases?.forEach(canvas => {
+        const currentWidth = chartDiv?.offsetWidth || chartDiv?.clientWidth || 800;
+        const currentHeight = chartDiv?.offsetHeight || chartDiv?.clientHeight || 600;
+        canvas.width = currentWidth;
+        canvas.height = currentHeight;
+        canvas.style.width = currentWidth + 'px';
+        canvas.style.height = currentHeight + 'px';
+      });
+    });
+    
+    mutationObserver.observe(chartDiv, {
+      childList: true,
+      subtree: true
+    });
   }
 });
 
@@ -593,8 +703,9 @@ onBeforeUnmount(() => {
   background: white;
   padding: 0;
   margin: 0;
-  overflow: visible;
+  overflow: hidden;
   position: relative;
+  box-sizing: border-box;
 }
 
 #chartdiv {
@@ -603,8 +714,9 @@ onBeforeUnmount(() => {
   padding: 0 !important;
   margin: 0 !important;
   box-sizing: border-box !important;
-  overflow: visible !important;
+  overflow: hidden !important;
   position: relative !important;
+  display: block !important;
 }
 
 .text-sybil-teal {

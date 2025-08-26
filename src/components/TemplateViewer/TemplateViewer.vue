@@ -482,8 +482,13 @@ const exportTemplateWithRealData = async () => {
     
     const reportName = `${templateName.value} - ${portfolioName} - ${bounceName}`
     
-    const slideImages = await captureSlideImages(slides.value)
+    const imageData = await captureSlideImages(slides.value)
+    const slideImages = imageData.slideImages
+    const chartImages = imageData.chartImages
 
+    const slidesToSave = JSON.parse(JSON.stringify(slides.value))
+    
+    
     const reportId = await reportService.saveReport({
       name: reportName,
       templateId: template.value?.id || templateId || '',
@@ -494,7 +499,8 @@ const exportTemplateWithRealData = async () => {
       bounceName: selectedBounce.value?.displayName || selectedBounce.value?.name || '',
       pptData: pptBlob,
       slideImages: slideImages,
-      slides: JSON.parse(JSON.stringify(slides.value))
+      chartImages: chartImages,
+      slides: slidesToSave
     })
     
     restoreMockTables()
@@ -570,9 +576,10 @@ const captureDashboardTableAsImage = async (element: any): Promise<string | null
   }
 }
 
-const captureSlideImages = async (slides: any[]): Promise<string[]> => {
+const captureSlideImages = async (slides: any[]): Promise<{ slideImages: string[], chartImages: Record<string, string> }> => {
   try {
     const slideImages: string[] = []
+    const chartImages: Record<string, string> = {}
     
     mountAllTablesForExport.value = true
     await nextTick()
@@ -582,7 +589,10 @@ const captureSlideImages = async (slides: any[]): Promise<string[]> => {
       const hiddenContainer = document.querySelector('[style*="left: -10000px"]')
       if (!hiddenContainer) {
         console.error('Hidden container not found')
-        return slides.map((_, index) => createPlaceholderSlideImage(index + 1))
+        return {
+          slideImages: slides.map((_, index) => createPlaceholderSlideImage(index + 1)),
+          chartImages: {}
+        }
       }
       
       const originalStyle = hiddenContainer.getAttribute('style')
@@ -614,6 +624,24 @@ const captureSlideImages = async (slides: any[]): Promise<string[]> => {
             
             slideImages.push(dataUrl)
             
+            const chartElements = slide.elements?.filter((element: any) => element.type === 'performance-chart') || []
+            for (const element of chartElements) {
+              try {
+                const chartElement = slideElement.querySelector(`[data-element-id="${element.id}"] #chartdiv`) as HTMLElement
+                if (chartElement) {
+                  const chartDataUrl = await htmlToImage.toSvg(chartElement, {
+                    quality: 1.0,
+                    backgroundColor: '#ffffff',
+                    pixelRatio: 2,
+                    skipFonts: false
+                  })
+                  chartImages[element.id] = chartDataUrl
+                }
+              } catch (error) {
+                console.error(`Error capturing chart for element ${element.id}:`, error)
+              }
+            }
+            
           } catch (error) {
             console.error(`Error capturing slide ${i + 1}:`, error)
             slideImages.push(createPlaceholderSlideImage(i + 1))
@@ -623,7 +651,7 @@ const captureSlideImages = async (slides: any[]): Promise<string[]> => {
         hiddenContainer.setAttribute('style', originalStyle || '')
       }
       
-      return slideImages
+      return { slideImages, chartImages }
       
     } finally {
       mountAllTablesForExport.value = false
@@ -631,7 +659,10 @@ const captureSlideImages = async (slides: any[]): Promise<string[]> => {
     
   } catch (error) {
     console.error('Error capturing slide images:', error)
-    return slides.map((_, index) => createPlaceholderSlideImage(index + 1))
+    return {
+      slideImages: slides.map((_, index) => createPlaceholderSlideImage(index + 1)),
+      chartImages: {}
+    }
   }
 }
 
@@ -836,38 +867,39 @@ const replaceMockTableWithRealData = async (mockTable: any, wizardData: any, cur
       const { useDashboardStore } = await import('@/store/dashboard')
       const dashboardStore = useDashboardStore()
       const deepCopy = (obj: any) => JSON.parse(JSON.stringify(obj))
-      element._snapshot = {
-        dashboards: deepCopy(dashboardStore.dashboards),
-        dashboard_data: deepCopy(dashboardStore.dashboard_data),
-        dashboard_data_column: deepCopy(dashboardStore.dashboard_data_column),
-        seasonality_parameters: deepCopy(dashboardStore.seasonality_parameters),
-        totalData: deepCopy(dashboardStore.totalData),
-        quarterly_dashboard_data: deepCopy(dashboardStore.quarterly_dashboard_data),
-        binder_dashboard_data: deepCopy(dashboardStore.binder_dashboard_data),
-        yearly_dashboard_data: deepCopy(dashboardStore.yearly_dashboard_data),
-        chart_data: deepCopy(dashboardStore.chart_data),
-        offMarginGWPGEP: dashboardStore.offMarginGWPGEP,
-        isQuarterSubTotal: dashboardStore.isQuarterSubTotal,
-        isQuarterSubTotalUp: dashboardStore.isQuarterSubTotalUp,
-        isBinderSubTotal: dashboardStore.isBinderSubTotal,
-        isBinderSubTotalUp: dashboardStore.isBinderSubTotalUp,
-        isYearSubTotal: dashboardStore.isYearSubTotal,
-        isYearSubTotalUp: dashboardStore.isYearSubTotalUp,
-        showColumn: deepCopy(dashboardStore.showColumn),
-        margin: deepCopy(dashboardStore.margin),
-        showColumnTotal: dashboardStore.showColumnTotal,
-        totalMargin: dashboardStore.totalMargin,
-        isShowingExposure: dashboardStore.isShowingExposure,
-        underwriting_loss_ratios: dashboardStore.underwriting_loss_ratios,
-        visibleColumns: deepCopy(dashboardStore.visibleColumns),
-        gwpnwp: dashboardStore.dashboards.gwpnwp,
-        ccr_nlr: dashboardStore.dashboards.ccr_nlr,
-        seasonFactor: dashboardStore.dashboards.seasonFactor,
-        ratio_amount: dashboardStore.dashboards.ratio_amount,
-        uw_acc: dashboardStore.dashboards.uw_acc,
-        mqy: dashboardStore.dashboards.mqy,
-        isBindedYears: dashboardStore.isBindedYears
-      }
+        element._snapshot = {
+          dashboards: deepCopy(dashboardStore.dashboards),
+          dashboard_data: deepCopy(dashboardStore.dashboard_data),
+          dashboard_data_column: deepCopy(dashboardStore.dashboard_data_column),
+          seasonality_parameters: deepCopy(dashboardStore.seasonality_parameters),
+          totalData: deepCopy(dashboardStore.totalData),
+          quarterly_dashboard_data: deepCopy(dashboardStore.quarterly_dashboard_data),
+          binder_dashboard_data: deepCopy(dashboardStore.binder_dashboard_data),
+          yearly_dashboard_data: deepCopy(dashboardStore.yearly_dashboard_data),
+          chart_data: deepCopy(dashboardStore.chart_data),
+          offMarginGWPGEP: dashboardStore.offMarginGWPGEP,
+          isQuarterSubTotal: dashboardStore.isQuarterSubTotal,
+          isQuarterSubTotalUp: dashboardStore.isQuarterSubTotalUp,
+          isBinderSubTotal: dashboardStore.isBinderSubTotal,
+          isBinderSubTotalUp: dashboardStore.isBinderSubTotalUp,
+          isYearSubTotal: dashboardStore.isYearSubTotal,
+          isYearSubTotalUp: dashboardStore.isYearSubTotalUp,
+          showColumn: deepCopy(dashboardStore.showColumn),
+          margin: deepCopy(dashboardStore.margin),
+          showColumnTotal: dashboardStore.showColumnTotal,
+          totalMargin: dashboardStore.totalMargin,
+          isShowingExposure: dashboardStore.isShowingExposure,
+          underwriting_loss_ratios: dashboardStore.underwriting_loss_ratios,
+          visibleColumns: deepCopy(dashboardStore.visibleColumns),
+          gwpnwp: dashboardStore.dashboards.gwpnwp,
+          ccr_nlr: dashboardStore.dashboards.ccr_nlr,
+          seasonFactor: dashboardStore.dashboards.seasonFactor,
+          ratio_amount: dashboardStore.dashboards.ratio_amount,
+          uw_acc: dashboardStore.dashboards.uw_acc,
+          mqy: dashboardStore.dashboards.mqy,
+          isBindedYears: dashboardStore.isBindedYears,
+          data_CommissionColumns: deepCopy(dashboardStore.data_CommissionColumns)
+        }
       
     } catch (e) {
       console.error('Failed to create element snapshot:', e)

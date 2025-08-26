@@ -4,7 +4,12 @@
       <h2>My Templates</h2>
     </div>
 
-    <div class="template-grid" v-if="paginatedTemplates.length > 0">
+    <div v-if="loading" class="loading-state">
+      <div class="loading-spinner"></div>
+      <p>Loading templates...</p>
+    </div>
+
+    <div v-else-if="paginatedTemplates.length > 0" class="template-grid">
       <div 
         v-for="(template, index) in paginatedTemplates" 
         :key="template.id || index"
@@ -85,6 +90,7 @@ interface Template {
 
 const router = useRouter()
 const templates = ref<Template[]>([])
+const loading = ref(true)
 
 const showDeleteDialog = ref(false)
 const selectedTemplate = ref<Template | null>(null)
@@ -137,10 +143,13 @@ const confirmDelete = async () => {
 
 const loadTemplates = async () => {
   try {
+    loading.value = true
     templates.value = await templateService.loadTemplates()
     currentPage.value = 1 // Reset to first page when loading new templates
   } catch (error) {
     console.error('Failed to load templates:', error)
+  } finally {
+    loading.value = false
   }
 }
 
@@ -371,5 +380,29 @@ onMounted(() => {
   font-size: 14px;
   color: #6b7280;
   font-weight: 500;
+}
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #6b7280;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e5e7eb;
+  border-top: 3px solid #55B691;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 </style>

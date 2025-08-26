@@ -6,7 +6,12 @@
     </div>
     
     <div class="reports-content">
-      <div v-if="reports.length > 0" class="reports-grid">
+      <div v-if="loading" class="loading-state">
+        <div class="loading-spinner"></div>
+        <p>Loading reports...</p>
+      </div>
+
+      <div v-else-if="reports.length > 0" class="reports-grid">
         <div 
           v-for="report in paginatedReports" 
           :key="report.id"
@@ -163,6 +168,7 @@ import { saveAs } from 'file-saver'
 const router = useRouter()
 
 const reports = ref<Report[]>([])
+const loading = ref(true)
 const contextMenu = ref({
   visible: false,
   x: 0,
@@ -218,12 +224,13 @@ onMounted(async () => {
 
 const loadReports = async () => {
   try {
-    console.log('📊 Reports page: Loading reports...')
+    loading.value = true
     reports.value = await reportService.getAllReports()
-    console.log('📊 Reports page: Loaded reports:', reports.value.length)
     currentPage.value = 1 // Reset to first page when loading new reports
   } catch (error) {
     console.error('📊 Reports page: Error loading reports:', error)
+  } finally {
+    loading.value = false
   }
 }
 
@@ -896,6 +903,30 @@ const startSlideshow = (report: Report | null) => {
   font-size: 14px;
   color: #6b7280;
   font-weight: 500;
+}
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #6b7280;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e5e7eb;
+  border-top: 3px solid #55B691;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 </style>
 

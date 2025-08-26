@@ -27,6 +27,8 @@ export interface SlidesState {
   viewportSize: number
   viewportRatio: number
   _layouts: Slide[]
+  slideImages: string[]
+  chartImages: Record<string, string>
 }
 
 export const useSlidesStore = defineStore('slides', {
@@ -54,6 +56,8 @@ export const useSlidesStore = defineStore('slides', {
     viewportSize: 1000, // Viewport width base
     viewportRatio: 0.5625, // Viewport ratio, default 16:9
     _layouts: [], // Layout templates
+    slideImages: [], // Pre-generated slide images
+    chartImages: {}, // Pre-generated chart images by element ID
   }),
 
   getters: {
@@ -183,7 +187,7 @@ export const useSlidesStore = defineStore('slides', {
       const slidesId = Array.isArray(slideId) ? slideId : [slideId]
       const slides: Slide[] = JSON.parse(JSON.stringify(this.slides))
   
-      const deleteSlidesIndex = []
+      const deleteSlidesIndex: number[] = []
       for (const deletedId of slidesId) {
         const index = slides.findIndex(item => item.id === deletedId)
         deleteSlidesIndex.push(index)
@@ -248,6 +252,14 @@ export const useSlidesStore = defineStore('slides', {
         return el.id === id ? omit(el, propsNames) : el
       })
       this.slides[slideIndex].elements = (elements as PPTElement[])
+    },
+
+    setSlideImages(slideImages: string[]) {
+      this.slideImages = slideImages
+    },
+
+    setChartImages(chartImages: Record<string, string>) {
+      this.chartImages = chartImages
     },
   },
 })

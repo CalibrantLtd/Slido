@@ -881,6 +881,39 @@ export default () => {
             pptxSlide.addImage(options)
           }
         }
+
+        else if (el.type === 'performance-chart') {
+          const chartElement = document.querySelector(`[data-element-id="${el.id}"] #chartdiv`) as HTMLElement
+          
+          if (chartElement) {
+            try {
+              const capturedImage = await toPng(chartElement, {
+                quality: 1.0,
+                width: el.width,
+                height: el.height,
+                fontEmbedCSS: '',
+              })
+              
+              const options: pptxgen.ImageProps = {
+                data: capturedImage,
+                x: el.left / ratioPx2Inch.value,
+                y: el.top / ratioPx2Inch.value,
+                w: el.width / ratioPx2Inch.value,
+                h: el.height / ratioPx2Inch.value,
+              }
+              
+              if (el.rotate) options.rotate = el.rotate
+              if (el.link) {
+                const linkOption = getLinkOption(el.link)
+                if (linkOption) options.hyperlink = linkOption
+              }
+              
+              pptxSlide.addImage(options)
+            } catch (error) {
+              console.error(`Failed to capture performance chart for element ${el.id}:`, error)
+            }
+          }
+        }
       }
     }
 

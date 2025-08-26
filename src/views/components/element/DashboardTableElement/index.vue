@@ -35,7 +35,7 @@
           :height="elementInfo.height"
           :outline="elementInfo.outline"
         />
-        <!-- Use real DashboardTable if element has real data, otherwise use mock -->
+        <!-- Use live DashboardTable with snapshot data -->
         <DashboardTable 
           v-if="elementInfo.type === 'dashboard-table'" 
           overflow="auto"
@@ -100,8 +100,41 @@ const props = defineProps<{
 const elementRef = ref<HTMLElement>()
 const dashboardStore = useDashboardStore()
 
+
 onMounted(async () => {
   if ((props.elementInfo as any)._snapshot) {
+    const snapshot = (props.elementInfo as any)._snapshot
+    const deepCopy = (obj: any) => JSON.parse(JSON.stringify(obj))
+    
+    // Restore dashboard state from snapshot
+    dashboardStore.dashboards = deepCopy(snapshot.dashboards)
+    dashboardStore.dashboard_data = deepCopy(snapshot.dashboard_data)
+    dashboardStore.dashboard_data_column = deepCopy(snapshot.dashboard_data_column)
+    dashboardStore.seasonality_parameters = deepCopy(snapshot.seasonality_parameters)
+    dashboardStore.totalData = deepCopy(snapshot.totalData)
+    dashboardStore.quarterly_dashboard_data = deepCopy(snapshot.quarterly_dashboard_data)
+    dashboardStore.binder_dashboard_data = deepCopy(snapshot.binder_dashboard_data)
+    dashboardStore.yearly_dashboard_data = deepCopy(snapshot.yearly_dashboard_data)
+    dashboardStore.chart_data = deepCopy(snapshot.chart_data)
+    dashboardStore.isQuarterSubTotal = snapshot.isQuarterSubTotal
+    dashboardStore.isQuarterSubTotalUp = snapshot.isQuarterSubTotalUp
+    dashboardStore.isBinderSubTotal = snapshot.isBinderSubTotal
+    dashboardStore.isBinderSubTotalUp = snapshot.isBinderSubTotalUp
+    dashboardStore.isYearSubTotal = snapshot.isYearSubTotal
+    dashboardStore.isYearSubTotalUp = snapshot.isYearSubTotalUp
+    dashboardStore.showColumn = deepCopy(snapshot.showColumn)
+    dashboardStore.margin = deepCopy(snapshot.margin)
+    dashboardStore.showColumnTotal = snapshot.showColumnTotal
+    dashboardStore.totalMargin = snapshot.totalMargin
+    dashboardStore.isShowingExposure = snapshot.isShowingExposure
+    dashboardStore.underwriting_loss_ratios = snapshot.underwriting_loss_ratios
+    dashboardStore.visibleColumns = deepCopy(snapshot.visibleColumns)
+    dashboardStore.isBindedYears = snapshot.isBindedYears
+    
+    if (snapshot.data_CommissionColumns !== undefined) {
+      dashboardStore.data_CommissionColumns = deepCopy(snapshot.data_CommissionColumns)
+    }
+    
     return
   }
   
@@ -157,12 +190,12 @@ onMounted(async () => {
   }
 })
 
-const handleSelectElement = (e: MouseEvent | TouchEvent, canMove = true) => {
+const handleSelectElement = (e: MouseEvent | TouchEvent, canMove = false) => {
   if (props.elementInfo.lock) return
   e.stopPropagation()
   e.preventDefault()
 
-  // Allow moving for dashboard tables
+  // Disable resizing for template dashboard tables
   if (props.selectElement) {
     props.selectElement(e, props.elementInfo, canMove)
   }
@@ -174,11 +207,11 @@ const handleSelectElement = (e: MouseEvent | TouchEvent, canMove = true) => {
   position: absolute;
   cursor: pointer;
   user-select: none;
-  pointer-events: auto; /* Enable pointer events for dragging */
+  pointer-events: none; /* Disable all pointer events */
 }
 
 .dashboard-table-element .element-content {
-  pointer-events: auto; /* Enable pointer events for interaction */
+  pointer-events: auto; /* Re-enable for selection only */
 }
 
 .rotate-wrapper {

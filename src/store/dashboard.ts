@@ -539,7 +539,7 @@ export const useDashboardStore = defineStore('slido-dashboard', () => {
                     : data_row[dashboard_data_column.value['uw_data.' + x + '_seasonality']])
               )
               .reduce((ps: number, s: number) => ps + s, 0) +
-              data_CommissionColumns.value
+              (data_CommissionColumns.value || [])
                 .map((x) => data_row[dashboard_data_column.value[x]])
                 .reduce((ps: number, s: number) => ps + s, 0)) /
             data_row[dashboard_data_column.value['uw_data.GEP_AMOUNT']])
@@ -558,7 +558,7 @@ export const useDashboardStore = defineStore('slido-dashboard', () => {
               )
               .reduce((ps: number, s: number) => ps + s, 0) /
             (data_row[dashboard_data_column.value['uw_data.GEP_AMOUNT']] -
-              data_CommissionColumns.value
+              (data_CommissionColumns.value || [])
                 .map((x) => data_row[dashboard_data_column.value[x]])
                 .reduce((ps: number, s: number) => ps + s, 0)))
         : (ans = 0);

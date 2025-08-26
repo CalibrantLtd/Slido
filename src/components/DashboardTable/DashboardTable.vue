@@ -499,7 +499,8 @@ const visibleRowIndices = computed(() => {
 
 const hasData = computed(() => {
   const totalData = props.snapshot?.totalData ?? dashboardStore.totalData;
-  return dashboardData.value && totalData && Object.keys(dashboardData.value).length > 0;
+  const dashboardDataToCheck = props.snapshot?.dashboard_data ?? dashboardStore.dashboard_data;
+  return dashboardDataToCheck && totalData && Object.keys(dashboardDataToCheck).length > 0;
 });
 
 // Determine which mock table image to use based on template type

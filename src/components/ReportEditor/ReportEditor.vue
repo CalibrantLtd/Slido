@@ -48,6 +48,8 @@ onMounted(async () => {
       error.value = 'This report cannot be edited (no slides data available)'
       return
     }
+    
+    
     loading.value = false
   } catch (err) {
     console.error('Error loading report:', err)
@@ -57,8 +59,20 @@ onMounted(async () => {
 })
 
 const onEditorLoad = () => {
-  setTimeout(() => {
-    if (editorFrame.value && editorFrame.value.contentWindow && report.value) {
+}
+
+const goBack = () => {
+  router.push('/reports')
+}
+
+
+onMounted(() => {
+  window.addEventListener('message', handleEditorMessage)
+})
+
+const handleEditorMessage = async (event: MessageEvent) => {
+  if (event.data.type === 'EDITOR_READY') {
+    if (report.value) {
       const slidesData = JSON.parse(JSON.stringify(report.value.slides))
       
       const message = {
@@ -66,26 +80,15 @@ const onEditorLoad = () => {
         data: {
           reportId: report.value.id,
           name: report.value.name,
-          slides: slidesData
+          slides: slidesData,
+          slideImages: JSON.parse(JSON.stringify(report.value.slideImages)),
+          chartImages: JSON.parse(JSON.stringify(report.value.chartImages || {}))
         }
       }
-      editorFrame.value.contentWindow.postMessage(message, '*')
-    } else {
-      console.error('Cannot send message to editor iframe')
+      
+      editorFrame.value?.contentWindow?.postMessage(message, '*')
     }
-  }, 500)
-}
-
-const goBack = () => {
-  router.push('/reports')
-}
-
-onMounted(() => {
-  window.addEventListener('message', handleEditorMessage)
-})
-
-const handleEditorMessage = async (event: MessageEvent) => {
-  if (event.data.type === 'SAVE_REPORT') {
+  } else if (event.data.type === 'SAVE_REPORT') {
     try {
       const { slides } = event.data.data
       
@@ -93,12 +96,15 @@ const handleEditorMessage = async (event: MessageEvent) => {
         throw new Error('No slides data received')
       }
       
-      const slideImages = await generateSlideImages(slides)
+      const imageData = await generateSlideImages(slides)
+      const slideImages = imageData.slideImages
+      const chartImages = imageData.chartImages
       const pptData = await generatePPTData(slides)
       
       await reportService.updateReport(reportId, {
         slides,
         slideImages,
+        chartImages,
         pptData: new Blob([pptData])
       })
       
@@ -115,7 +121,7 @@ const handleEditorMessage = async (event: MessageEvent) => {
   }
 }
 
-const generateSlideImages = async (slides: any[]): Promise<string[]> => {
+const generateSlideImages = async (slides: any[]): Promise<{ slideImages: string[], chartImages: Record<string, string> }> => {
   try {
     if (editorFrame.value && editorFrame.value.contentWindow) {
       return new Promise((resolve, reject) => {
@@ -148,7 +154,10 @@ const generateSlideImages = async (slides: any[]): Promise<string[]> => {
     
   } catch (error) {
     console.error('Error generating slide images:', error)
-    return slides.map((_, index) => createPlaceholderSlideImage(index + 1))
+    return {
+      slideImages: slides.map((_, index) => createPlaceholderSlideImage(index + 1)),
+      chartImages: {}
+    }
   }
 }
 
@@ -264,5 +273,6 @@ const generatePPTData = async (slides: any[]): Promise<ArrayBuffer> => {
   background: #4a9d7a;
   border-color: #4a9d7a;
 }
+
 </style>
 
