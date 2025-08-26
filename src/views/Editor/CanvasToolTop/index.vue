@@ -72,6 +72,9 @@
           ← Back
         </button>
         <IconEdit class="handler-item" v-tooltip="'Save Template'" @click="createTemplate()" v-if="!isReportMode" />
+        <button class="handler-item back-report-btn" v-tooltip="'Back to Reports'" @click="goBackToReports()" v-if="isReportMode">
+          ← Back
+        </button>
         <button class="handler-item save-report-btn" v-tooltip="'Save Report'" @click="saveReport()" v-if="isReportMode">
            Save
         </button>
@@ -455,6 +458,12 @@ const saveReport = async () => {
     console.error('Error saving report:', error)
     showErrorMessage('Failed to save report. Please try again.')
   }
+}
+
+const goBackToReports = () => {
+  window.parent.postMessage({
+    type: 'GO_BACK_TO_REPORTS'
+  }, '*')
 }
 
 const showSuccessMessage = (message: string) => {
@@ -1689,6 +1698,21 @@ onMounted(async () => {
     transform: translateX(100%);
     opacity: 0;
   }
+}
+
+.back-report-btn {
+  background: white;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  margin-right: 8px;
+}
+
+.back-report-btn:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
 }
 
 .save-report-btn {

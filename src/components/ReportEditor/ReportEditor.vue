@@ -118,6 +118,8 @@ const handleEditorMessage = async (event: MessageEvent) => {
         error: 'Failed to save report'
       }, '*')
     }
+  } else if (event.data.type === 'GO_BACK_TO_REPORTS') {
+    goBack()
   }
 }
 
@@ -251,6 +253,13 @@ const generatePPTData = async (slides: any[]): Promise<ArrayBuffer> => {
   color: #6b7280;
   font-size: 16px;
   margin: 0 0 16px 0;
+}
+
+
+.editor-iframe {
+  width: 100%;
+  height: 100vh;
+  border: none;
 }
 
 .btn {

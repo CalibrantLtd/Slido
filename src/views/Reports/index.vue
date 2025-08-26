@@ -136,10 +136,6 @@
             </div>
           </div>
         </div>
-        <div class="viewer-footer">
-          <button @click="downloadReport(viewerModal.report)" class="btn primary">Download</button>
-          <button @click="closeViewer" class="btn cancel">Close</button>
-        </div>
       </div>
     </div>
     
@@ -859,13 +855,6 @@ const startSlideshow = (report: Report | null) => {
   font-weight: 500;
 }
 
-.viewer-footer {
-  padding: 8px 16px 12px;
-  display: flex;
-  gap: 8px;
-  justify-content: flex-end;
-  border-top: 1px solid #e5e7eb;
-}
 
 /* Pagination styles */
 .pagination {
