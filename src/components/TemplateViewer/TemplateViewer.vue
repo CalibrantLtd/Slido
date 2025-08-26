@@ -112,6 +112,7 @@
         v-if="currentWizardData"
         :portfolio="currentWizardData.wizardInstance.portfolio"
         :bounce="currentWizardData.wizardInstance.bounce"
+        :element="currentWizardData.wizardInstance.mockTable?.element"
         @close="onWizardClose"
         @finish="onWizardFinish"
       />
@@ -594,7 +595,7 @@ const captureSlideImages = async (slides: any[]): Promise<string[]> => {
       try {
         currentSlideIndex.value = i
         
-        await new Promise(resolve => setTimeout(resolve, 100))
+        await new Promise(resolve => setTimeout(resolve, 500))
         
         const slideElement = document.querySelector('.slide-content')
         

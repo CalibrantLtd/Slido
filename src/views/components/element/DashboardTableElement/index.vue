@@ -47,6 +47,7 @@
           :total-ultimate-only="elementInfo.totalUltimateOnly"
           :loss-ratios-only="elementInfo.lossRatiosOnly"
           :attritional-large-expanded="elementInfo.attritionalLargeExpanded"
+          :max-rows="elementInfo.maxRows"
         />
         
       </div>

@@ -133,7 +133,7 @@ defineEmits(['onChangeCcrMargin']);
       >(underwriting {{ dashboardStore.dashboards.mqy }})</span
     >
   </th>
-  <template v-if="portfolioStore.getExposureLength() > 0 && dashboardStore.isShowingExposure">
+  <template v-if="portfolioStore.getExposureLength() > 0 && dashboardStore.isShowingExposure && !props.totalUltimateOnly">
     <th class="fixWidth fixHeight header-teal text-sybil-teal" rowspan="2">
       Total Risk Count
       <span v-if="dashboardStore.dashboards.uw_acc == 'acc'" class="italc text-xs"

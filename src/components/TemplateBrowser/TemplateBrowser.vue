@@ -89,7 +89,7 @@ const templates = ref<Template[]>([])
 const showDeleteDialog = ref(false)
 const selectedTemplate = ref<Template | null>(null)
 
-const itemsPerPage = 16
+const itemsPerPage = 20
 const currentPage = ref(1)
 
 const totalPages = computed(() => Math.ceil(templates.value.length / itemsPerPage))

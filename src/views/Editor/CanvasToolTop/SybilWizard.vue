@@ -29,7 +29,7 @@
             <label class="radio" v-if="dashboards.mqy==='year'"><input type="radio" name="uw_acc" value="bespoke" :checked="dashboards.uw_acc==='uw' && isBindedYears" @change="() => setUwMode('bespoke')"> Bespoke</label>
           </div>
 
-          <div class="option-group">
+          <div class="option-group" v-if="!isSimplifiedTemplate || props.element?.lossRatiosOnly || props.element?.totalUltimateOnly">
             <div class="group-title">GWP/NWP</div>
             <label class="radio"><input type="radio" name="premium" value="GWP" :checked="dashboards.gwpnwp==='GWP'" @change="() => switchGwpNwp('GWP')"> GWP</label>
             <label class="radio"><input type="radio" name="premium" value="NWP" :checked="dashboards.gwpnwp==='NWP'" @change="() => switchGwpNwp('NWP')"> NWP</label>
@@ -41,13 +41,13 @@
             <label class="radio"><input type="radio" name="basis" value="Earned" :checked="underwriting_loss_ratios==='Earned'" @change="() => setBasis('Earned')"> Earned</label>
           </div>
 
-          <div class="option-group">
+          <div class="option-group" v-if="!isSimplifiedTemplate">
             <div class="group-title">CCR / NLR</div>
             <label class="radio"><input type="radio" name="ccrnlr" value="CCR" :checked="dashboards.ccr_nlr==='CCR'" @change="() => setCcrNlr('CCR')"> CCR</label>
             <label class="radio"><input type="radio" name="ccrnlr" value="NLR" :checked="dashboards.ccr_nlr==='NLR'" @change="() => setCcrNlr('NLR')"> NLR</label>
           </div>
 
-          <div class="option-group">
+          <div class="option-group" v-if="!hideSeasonalityAdjustment">
             <div class="group-title">Seasonality Adjustment</div>
             <label class="radio"><input type="radio" name="seasonality" value="no" :checked="!dashboards.seasonFactor" @change="() => setSeasonality(false)"> No Seasonality Adjustment</label>
             <label class="radio"><input type="radio" name="seasonality" value="yes" :checked="dashboards.seasonFactor" @change="() => setSeasonality(true)"> Seasonality Adjustment</label>
@@ -85,11 +85,33 @@ const emit = defineEmits(['close', 'finish'])
 const props = defineProps({
   portfolio: { type: Object, default: null },
   bounce: { type: Object, default: null },
-  wizardType: { type: String, default: 'dashboard-table' }
+  wizardType: { type: String, default: 'dashboard-table' },
+  element: { type: Object, default: null }
 })
 
 const dashboardStore = useDashboardStore()
 const isLoading = ref(true)
+
+const isSimplifiedTemplate = computed(() => {
+  if (!props.element) return false
+  
+  return props.element.attritionalOnly || 
+         props.element.largeOnly || 
+         props.element.weatherOnly || 
+         props.element.totalUltimateOnly ||
+         props.element.lossRatiosOnly
+})
+
+const hideSeasonalityAdjustment = computed(() => {
+  if (!props.element) return false
+  
+  return props.element.attritionalOnly || 
+         props.element.largeOnly || 
+         props.element.weatherOnly || 
+         props.element.totalUltimateOnly ||
+         props.element.lossRatiosOnly ||
+         props.element.attritionalLargeExpanded
+})
 
 onMounted(async () => {  
   if (props.portfolio && props.bounce) {

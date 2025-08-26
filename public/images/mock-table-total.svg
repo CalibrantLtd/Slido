@@ -1,0 +1,239 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="420" font-family="Arial, sans-serif">
+
+  <!-- Header Row -->
+  <rect x="0" y="0" width="1200" height="30" fill="#d5e8d4" stroke="#ccc"/>
+  <rect x="0" y="0" width="200" height="60" fill="#d5e8d4" stroke="#ccc"/>
+  <text x="100" y="35" font-size="16" text-anchor="middle" font-weight="bold">Period</text>
+  
+  <rect x="200" y="0" width="150" height="60" fill="#d5e8d4" stroke="#ccc"/>
+  <text x="275" y="35" font-size="16" text-anchor="middle" font-weight="bold">GEP</text>
+  
+  <rect x="350" y="0" width="850" height="30" fill="#d5e8d4" stroke="#ccc"/>
+  <text x="775" y="20" font-size="16" text-anchor="middle" font-weight="bold">Earned Loss Ratios</text>
+  
+  <!-- Subheader -->
+  <rect x="350" y="30" width="850" height="30" fill="#d5e8d4" stroke="#ccc"/>
+  <rect x="350" y="30" width="200" height="30" fill="#d5e8d4" stroke="#ccc"/>
+  <text x="450" y="50" font-size="14" text-anchor="middle" fill="red">Attritional Ultimate</text>
+  
+  <rect x="550" y="30" width="200" height="30" fill="#d5e8d4" stroke="#ccc"/>
+  <text x="650" y="50" font-size="14" text-anchor="middle" fill="red">Large Ultimate</text>
+  
+  <rect x="750" y="30" width="450" height="30" fill="#d5e8d4" stroke="#ccc"/>
+  <text x="975" y="50" font-size="14" text-anchor="middle" fill="red">Total</text>
+
+  <!-- Second subheader -->
+  <rect x="750" y="60" width="450" height="30" fill="#d5e8d4" stroke="#ccc"/>
+  <rect x="750" y="60" width="90" height="30" fill="#d5e8d4" stroke="#ccc"/>
+  <text x="795" y="80" font-size="12" text-anchor="middle" fill="red">Paid</text>
+
+  <rect x="840" y="60" width="90" height="30" fill="#d5e8d4" stroke="#ccc"/>
+  <text x="885" y="80" font-size="12" text-anchor="middle" fill="red">O/S</text>
+
+  <rect x="930" y="60" width="90" height="30" fill="#d5e8d4" stroke="#ccc"/>
+  <text x="975" y="80" font-size="12" text-anchor="middle" fill="red">Incurred</text>
+
+  <rect x="1020" y="60" width="90" height="30" fill="#d5e8d4" stroke="#ccc"/>
+  <text x="1065" y="80" font-size="12" text-anchor="middle" fill="red">IBNR</text>
+
+  <rect x="1110" y="60" width="90" height="30" fill="#d5e8d4" stroke="#ccc"/>
+  <text x="1155" y="80" font-size="12" text-anchor="middle" fill="red">Ultimate</text>
+
+  <!-- Background for the empty space under Period/GEP in the third header row -->
+  <rect x="0" y="60" width="350" height="30" fill="#d5e8d4" stroke="#ccc"/>
+  
+  <!-- Background for the empty space under Attritional/Large Ultimate in the third header row -->
+  <rect x="350" y="60" width="400" height="30" fill="#d5e8d4" stroke="#ccc"/>
+
+  <!-- Data Rows (8) -->
+  <g font-size="12" text-anchor="middle">
+    <!-- Row 1 -->
+    <rect x="0" y="90" width="200" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="100" y="110" fill="black">x</text>
+    <rect x="200" y="90" width="150" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="275" y="110" fill="green">0</text>
+    <rect x="350" y="90" width="200" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="450" y="110" fill="red">0</text>
+    <rect x="550" y="90" width="200" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="650" y="110" fill="red">0</text>
+    <rect x="750" y="90" width="90" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="795" y="110" fill="red">0</text>
+    <rect x="840" y="90" width="90" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="885" y="110" fill="red">0</text>
+    <rect x="930" y="90" width="90" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="975" y="110" fill="red">0</text>
+    <rect x="1020" y="90" width="90" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="1065" y="110" fill="red">0</text>
+    <rect x="1110" y="90" width="90" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="1155" y="110" fill="red">0</text>
+
+    <!-- Row 2 -->
+    <rect x="0" y="120" width="200" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="100" y="140" fill="black">x</text>
+    <rect x="200" y="120" width="150" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="275" y="140" fill="green">0</text>
+    <rect x="350" y="120" width="200" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="450" y="140" fill="red">0</text>
+    <rect x="550" y="120" width="200" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="650" y="140" fill="red">0</text>
+    <rect x="750" y="120" width="90" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="795" y="140" fill="red">0</text>
+    <rect x="840" y="120" width="90" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="885" y="140" fill="red">0</text>
+    <rect x="930" y="120" width="90" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="975" y="140" fill="red">0</text>
+    <rect x="1020" y="120" width="90" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="1065" y="140" fill="red">0</text>
+    <rect x="1110" y="120" width="90" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="1155" y="140" fill="red">0</text>
+
+    <!-- Row 3 -->
+    <rect x="0" y="150" width="200" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="100" y="170" fill="black">x</text>
+    <rect x="200" y="150" width="150" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="275" y="170" fill="green">0</text>
+    <rect x="350" y="150" width="200" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="450" y="170" fill="red">0</text>
+    <rect x="550" y="150" width="200" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="650" y="170" fill="red">0</text>
+    <rect x="750" y="150" width="90" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="795" y="170" fill="red">0</text>
+    <rect x="840" y="150" width="90" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="885" y="170" fill="red">0</text>
+    <rect x="930" y="150" width="90" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="975" y="170" fill="red">0</text>
+    <rect x="1020" y="150" width="90" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="1065" y="170" fill="red">0</text>
+    <rect x="1110" y="150" width="90" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="1155" y="170" fill="red">0</text>
+
+    <!-- Row 4 -->
+    <rect x="0" y="180" width="200" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="100" y="200" fill="black">x</text>
+    <rect x="200" y="180" width="150" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="275" y="200" fill="green">0</text>
+    <rect x="350" y="180" width="200" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="450" y="200" fill="red">0</text>
+    <rect x="550" y="180" width="200" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="650" y="200" fill="red">0</text>
+    <rect x="750" y="180" width="90" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="795" y="200" fill="red">0</text>
+    <rect x="840" y="180" width="90" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="885" y="200" fill="red">0</text>
+    <rect x="930" y="180" width="90" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="975" y="200" fill="red">0</text>
+    <rect x="1020" y="180" width="90" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="1065" y="200" fill="red">0</text>
+    <rect x="1110" y="180" width="90" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="1155" y="200" fill="red">0</text>
+
+    <!-- Row 5 -->
+    <rect x="0" y="210" width="200" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="100" y="230" fill="black">x</text>
+    <rect x="200" y="210" width="150" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="275" y="230" fill="green">0</text>
+    <rect x="350" y="210" width="200" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="450" y="230" fill="red">0</text>
+    <rect x="550" y="210" width="200" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="650" y="230" fill="red">0</text>
+    <rect x="750" y="210" width="90" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="795" y="230" fill="red">0</text>
+    <rect x="840" y="210" width="90" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="885" y="230" fill="red">0</text>
+    <rect x="930" y="210" width="90" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="975" y="230" fill="red">0</text>
+    <rect x="1020" y="210" width="90" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="1065" y="230" fill="red">0</text>
+    <rect x="1110" y="210" width="90" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="1155" y="230" fill="red">0</text>
+
+    <!-- Row 6 -->
+    <rect x="0" y="240" width="200" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="100" y="260" fill="black">x</text>
+    <rect x="200" y="240" width="150" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="275" y="260" fill="green">0</text>
+    <rect x="350" y="240" width="200" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="450" y="260" fill="red">0</text>
+    <rect x="550" y="240" width="200" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="650" y="260" fill="red">0</text>
+    <rect x="750" y="240" width="90" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="795" y="260" fill="red">0</text>
+    <rect x="840" y="240" width="90" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="885" y="260" fill="red">0</text>
+    <rect x="930" y="240" width="90" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="975" y="260" fill="red">0</text>
+    <rect x="1020" y="240" width="90" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="1065" y="260" fill="red">0</text>
+    <rect x="1110" y="240" width="90" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="1155" y="260" fill="red">0</text>
+
+    <!-- Row 7 -->
+    <rect x="0" y="270" width="200" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="100" y="290" fill="black">x</text>
+    <rect x="200" y="270" width="150" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="275" y="290" fill="green">0</text>
+    <rect x="350" y="270" width="200" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="450" y="290" fill="red">0</text>
+    <rect x="550" y="270" width="200" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="650" y="290" fill="red">0</text>
+    <rect x="750" y="270" width="90" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="795" y="290" fill="red">0</text>
+    <rect x="840" y="270" width="90" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="885" y="290" fill="red">0</text>
+    <rect x="930" y="270" width="90" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="975" y="290" fill="red">0</text>
+    <rect x="1020" y="270" width="90" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="1065" y="290" fill="red">0</text>
+    <rect x="1110" y="270" width="90" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="1155" y="290" fill="red">0</text>
+
+    <!-- Row 8 -->
+    <rect x="0" y="300" width="200" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="100" y="320" fill="black">x</text>
+    <rect x="200" y="300" width="150" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="275" y="320" fill="green">0</text>
+    <rect x="350" y="300" width="200" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="450" y="320" fill="red">0</text>
+    <rect x="550" y="300" width="200" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="650" y="320" fill="red">0</text>
+    <rect x="750" y="300" width="90" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="795" y="320" fill="red">0</text>
+    <rect x="840" y="300" width="90" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="885" y="320" fill="red">0</text>
+    <rect x="930" y="300" width="90" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="975" y="320" fill="red">0</text>
+    <rect x="1020" y="300" width="90" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="1065" y="320" fill="red">0</text>
+    <rect x="1110" y="300" width="90" height="30" fill="#fff" stroke="#ccc"/>
+    <text x="1155" y="320" fill="red">0</text>
+  </g>
+
+  <!-- Total Row -->
+  <rect x="0" y="330" width="200" height="30" fill="#d5e8d4" stroke="#ccc"/>
+  <text x="100" y="350" font-size="14" text-anchor="middle" font-weight="bold">Total</text>
+  
+  <rect x="200" y="330" width="150" height="30" fill="#d5e8d4" stroke="#ccc"/>
+  <text x="275" y="350" font-size="14" text-anchor="middle" font-weight="bold">0</text>
+  
+  <rect x="350" y="330" width="200" height="30" fill="#d5e8d4" stroke="#ccc"/>
+  <text x="450" y="350" font-size="14" text-anchor="middle" font-weight="bold">0</text>
+  
+  <rect x="550" y="330" width="200" height="30" fill="#d5e8d4" stroke="#ccc"/>
+  <text x="650" y="350" font-size="14" text-anchor="middle" font-weight="bold">0</text>
+  
+  <rect x="750" y="330" width="90" height="30" fill="#d5e8d4" stroke="#ccc"/>
+  <text x="795" y="350" font-size="14" text-anchor="middle" font-weight="bold">0</text>
+  
+  <rect x="840" y="330" width="90" height="30" fill="#d5e8d4" stroke="#ccc"/>
+  <text x="885" y="350" font-size="14" text-anchor="middle" font-weight="bold">0</text>
+  
+  <rect x="930" y="330" width="90" height="30" fill="#d5e8d4" stroke="#ccc"/>
+  <text x="975" y="350" font-size="14" text-anchor="middle" font-weight="bold">0</text>
+  
+  <rect x="1020" y="330" width="90" height="30" fill="#d5e8d4" stroke="#ccc"/>
+  <text x="1065" y="350" font-size="14" text-anchor="middle" font-weight="bold">0</text>
+  
+  <rect x="1110" y="330" width="90" height="30" fill="#d5e8d4" stroke="#ccc"/>
+  <text x="1155" y="350" font-size="14" text-anchor="middle" font-weight="bold">0</text>
+
+</svg>

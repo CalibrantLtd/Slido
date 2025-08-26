@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onBeforeUnmount, nextTick } from 'vue';
+import { useRoute } from 'vue-router';
 import { ref } from 'vue';
 import DashboardHeader from './components/headers/DashboardHeader.vue';
 import UltimatesHeader from './components/headers/UltimatesHeader.vue';
@@ -32,7 +33,9 @@ const props = defineProps<{
   totalUltimateOnly?: boolean;
   lossRatiosOnly?: boolean;
   attritionalLargeExpanded?: boolean;
+  maxRows?: number;
 }>();
+
 const mqy = computed(() => dashboardStore.dashboards.mqy);
 
 const binderDashboardData = computed(() => dashboardStore.binder_dashboard_data);
@@ -138,7 +141,13 @@ const filteredMargin = computed(() => {
 });
 
 const leftColumnSize = computed(
-  () => 3 + (dashboardStore.isShowingExposure ? portfolioStore.getExposureLength() + 1 : 0)
+  () => {
+    const baseLeftColumns = props.totalUltimateOnly ? 2 : 3; 
+    const exposureColumns = (dashboardStore.isShowingExposure && !props.totalUltimateOnly)
+      ? portfolioStore.getExposureLength() + 1
+      : 0;
+    return baseLeftColumns + exposureColumns;
+  }
 );
 
 const filteredLeftColumnSize = computed(() => 
@@ -246,7 +255,7 @@ const filteredVisibleColumns = computed(() => {
     return [3]; // Enable IBNR and Ultimate sub-columns for the specific claims type
   }
   if (props.totalUltimateOnly) {
-    return [1, 2, 3]; // Show GWP, GEP, and CCR (for total ultimate columns)
+    return [2, 3]; // Show GEP and CCR (for total ultimate columns), hide GWP
   }
   if (props.lossRatiosOnly) {
     return [1, 2, 3]; // Show GWP, GEP, and CCR (for all loss ratio columns)
@@ -263,7 +272,7 @@ const filteredMainColumns = computed(() => {
     return [];
   }
   if (props.totalUltimateOnly) {
-    return [1, 2]; // Show GWP and GEP, hide Commission, CCR, Seasonality
+    return [2]; // Show only GEP, hide GWP, Commission, CCR, Seasonality
   }
   if (props.lossRatiosOnly) {
     return [1, 2]; // Show GWP and GEP, hide Commission, CCR, Seasonality
@@ -299,7 +308,7 @@ function updateNaturalSize() {
     } else if (props.totalUltimateOnly) {
       // For total ultimate mode, calculate based on actual column widths
       const periodColumnWidth = 112;
-      const gwpGepColumns = 2; // GWP and GEP
+      const gwpGepColumns = 1; // Only GEP 
       const claimsTypeCount = (portfolioStore.parameters?.claims_nature as string[])?.length || 2;
       const baseClaimsColumns = 1; // Each claims type shows 1 column (collapsed)
       const totalUltimateColumns = 6; // Paid, O/S, Incurred, IBNR, Unearned (if Written), Ultimate
@@ -313,30 +322,19 @@ function updateNaturalSize() {
       
       naturalWidth.value = calculatedWidth + 20; // Add padding
     } else if (props.lossRatiosOnly) {
-      // For loss ratios only mode, calculate based on expected column widths,
-      // then verify against measured DOM width to avoid underestimation.
-      const periodColumnWidth = 112;
-      const gwpGepColumns = 2; // GWP and GEP
-      const claimsTypeCount = (portfolioStore.parameters?.claims_nature as string[])?.length || 2;
-      const baseClaimsColumns = 1; // Each claims type shows 1 column (collapsed)
-
-      let calculatedWidth =
-        periodColumnWidth + gwpGepColumns * 112 + claimsTypeCount * baseClaimsColumns * 112;
-
-      // Measure the furthest right boundary of fixed-width cells as a safety net
+      // For loss ratios only mode, measure width up to and including Total column
       try {
-        const tableRect = (tableEl.value as HTMLElement).getBoundingClientRect();
-        const absCells = (tableEl.value as HTMLElement).querySelectorAll('.fixWidth');
-        let maxRight = 0;
-        absCells.forEach((node) => {
-          const rect = (node as HTMLElement).getBoundingClientRect();
-          const right = rect.right - tableRect.left;
-          if (right > maxRight) maxRight = right;
-        });
-        if (maxRight > calculatedWidth) calculatedWidth = maxRight;
-      } catch {}
-
-      naturalWidth.value = calculatedWidth + 10; // small padding
+        const periodColumnWidth = 112;
+        const gwpGepColumns = 2; // GWP and GEP
+        const claimsTypeCount = (portfolioStore.parameters?.claims_nature as string[])?.length || 2;
+        const baseClaimsColumns = 1; // Each claims type shows 1 column (collapsed)
+        const totalColumn = 1; // The Total column itself
+        
+        const calculatedWidth = periodColumnWidth + (gwpGepColumns * 112) + (claimsTypeCount * baseClaimsColumns * 112) + (totalColumn * 112);
+        naturalWidth.value = calculatedWidth;
+      } catch {
+        naturalWidth.value = tableEl.value.scrollWidth;
+      }
     } else {
       let measuredWidth = tableEl.value.scrollWidth || tableEl.value.offsetWidth || 1200;
 
@@ -376,10 +374,11 @@ onMounted(async () => {
   await nextTick();
   updateNaturalSize();
   
-  if (props.attritionalOnly || props.largeOnly || props.weatherOnly || props.totalUltimateOnly) {
+  if (props.attritionalOnly || props.largeOnly || props.weatherOnly || props.totalUltimateOnly || props.lossRatiosOnly) {
+    // Defer sizing until after DOM renders all headers/cells so width measurement is accurate
     setTimeout(() => {
       updateNaturalSize();
-    }, 100);
+    }, 200);
   }
   
   if ('ResizeObserver' in window) {
@@ -407,42 +406,78 @@ onBeforeUnmount(() => {
   window.removeEventListener('resize', updateNaturalSize);
 });
 
-const FUDGE_X = 0.998; // render slightly wider while still fitting container
-const FUDGE_Y = 0.995;
+const PADDING_Y = 4; // small padding to avoid bottom-edge clipping
 const effectiveWidth = computed(() => {
   const cw = containerWidthPx.value || props.containerWidth || 1;
-  // Ensure table always fills container by using max of natural width and container width
-  return Math.max(naturalWidth.value, cw);
+  // Always use natural width; scaling will compress to container as needed
+  return naturalWidth.value;
 });
 
 const effectiveHeight = computed(() => {
   const ch = containerHeightPx.value || props.containerHeight || 1;
-  // Ensure table always fills container by using max of natural height and container height
-  return Math.max(naturalHeight.value, ch);
+  // Always use natural height; scaling will compress to container as needed
+  return naturalHeight.value;
 });
 
 const scaleX = computed(() => {
-  const cw = containerWidthPx.value || props.containerWidth || 1;
-  return (cw / effectiveWidth.value) * FUDGE_X;
+  // Use props.containerWidth as fallback when ResizeObserver hasn't measured yet
+  const cw = containerWidthPx.value > 0 ? containerWidthPx.value : (props.containerWidth || 1);
+  const availableWidth = cw;
+  // Scale to fit container width
+  const ratio = availableWidth / Math.max(1, effectiveWidth.value);
+  return Math.max(0, Math.min(1, ratio));
 });
 const scaleY = computed(() => {
-  const ch = containerHeightPx.value || props.containerHeight || 1;
-  return (ch / effectiveHeight.value) * FUDGE_Y;
+  const ch = (containerHeightPx.value || props.containerHeight || 1) - PADDING_Y;
+  const ratio = ch / Math.max(1, effectiveHeight.value);
+  return Math.max(0, Math.min(1, ratio));
 });
 
-const isScaledDown = computed(() => Math.min(scaleX.value, scaleY.value) < 1);
+const isScaledDown = computed(() => Math.min(scaleX.value, scaleY.value) <= 1);
 
 const scaledFontSize = computed(() => 12);
 
 const scaledPadding = computed(() => 6);
 const totalMarginCCR = ref(0);
 const dashboardData = computed<DashboardData>(() => {
-  const data = dashboardStore.dashboard_data;
-  return data;
+  return dashboardStore.dashboard_data;
+});
+
+const visibleRowIndices = computed(() => {
+  const allIndices = Object.keys(dashboardData.value || {});
+  
+  if (props.maxRows && allIndices.length > props.maxRows) {
+    return allIndices.slice(-props.maxRows);
+  }
+  
+  return allIndices;
 });
 
 const hasData = computed(() => {
   return dashboardData.value && dashboardStore.totalData && Object.keys(dashboardData.value).length > 0;
+});
+
+// Determine which mock table image to use based on template type
+const mockTableImage = computed(() => {
+  if (props.attritionalOnly) {
+    return '/images/mock-table-attritional.svg';
+  }
+  if (props.largeOnly) {
+    return '/images/mock-table-large.svg';
+  }
+  if (props.weatherOnly) {
+    return '/images/mock-table-weather.svg';
+  }
+  if (props.totalUltimateOnly) {
+    return '/images/mock-table-total.svg';
+  }
+  if (props.lossRatiosOnly) {
+    return '/images/mock-table-loss-ratios.svg';
+  }
+  if (props.attritionalLargeExpanded) {
+    return '/images/mock-table-expanded.svg';
+  }
+  return '/images/MockTable.svg';
 });
 
 const totalDashboardData = computed<DashboardData>(() => {
@@ -503,7 +538,7 @@ function toggleIsExposure() {
     :style="{
       width: '100%',
       height: '100%',
-      backgroundImage: 'url(/images/MockTable.svg)',
+      backgroundImage: `url(${mockTableImage})`,
       backgroundSize: '100% 100%',
       backgroundRepeat: 'no-repeat',
       backgroundPosition: 'center'
@@ -572,7 +607,7 @@ function toggleIsExposure() {
           </tr>
         </thead>
         <tbody>
-          <template v-for="(n, idx) in dashboardData" :key="idx">
+          <template v-for="idx in visibleRowIndices" :key="idx">
             <tr>
               <ValueRow
                 :row-index="parseInt(idx.toString())"
@@ -590,6 +625,7 @@ function toggleIsExposure() {
                 :is-total-row="false"
                 row-class=""
                 :mqy="mqy"
+                :total-ultimate-only="props.totalUltimateOnly"
               />
             </tr>
             <tr
@@ -617,6 +653,7 @@ function toggleIsExposure() {
                 :is-total-row="false"
                 row-class="total-teal"
                 mqy="year"
+                :total-ultimate-only="props.totalUltimateOnly"
               />
             </tr>
             <tr v-if="quarterDashboardData[idx] && isQuarterSubTotal && isQuarterSubTotalUp && mqy == 'month'">
@@ -636,6 +673,7 @@ function toggleIsExposure() {
                 :is-total-row="false"
                 row-class="total-teal-quarter"
                 mqy="quarter"
+                :total-ultimate-only="props.totalUltimateOnly"
               />
             </tr>
             <tr v-if="yearDashboardData[idx] && isYearSubTotal && isYearSubTotalUp && mqy != 'year'">
@@ -655,6 +693,7 @@ function toggleIsExposure() {
                 :is-total-row="false"
                 row-class="total-teal"
                 mqy="year"
+                :total-ultimate-only="props.totalUltimateOnly"
               />
             </tr>
           </template>
@@ -676,6 +715,7 @@ function toggleIsExposure() {
                 :is-total-row="false"
                 row-class="total-teal-quarter"
                 mqy="quarter"
+                :total-ultimate-only="props.totalUltimateOnly"
               />
             </tr>
           </template>
@@ -699,6 +739,7 @@ function toggleIsExposure() {
                 :is-total-row="false"
                 row-class="total-teal"
                 :mqy="mqy"
+                :total-ultimate-only="props.totalUltimateOnly"
               />
             </tr>
           </template>
@@ -720,6 +761,7 @@ function toggleIsExposure() {
                 :is-total-row="false"
                 row-class="total-teal"
                 mqy="year"
+                :total-ultimate-only="props.totalUltimateOnly"
               />
             </tr>
           </template>
@@ -740,6 +782,7 @@ function toggleIsExposure() {
               :is-total-row="true"
               row-class="header-teal"
               :mqy="mqy"
+              :total-ultimate-only="props.totalUltimateOnly"
             />
           </tr>
         </tbody>

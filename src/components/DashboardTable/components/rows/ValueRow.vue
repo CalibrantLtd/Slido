@@ -40,6 +40,7 @@ const props = withDefaults(
     claimsType?: string[];
     visibleColumns?: number[];
     hideTotals?: boolean;
+    totalUltimateOnly?: boolean;
   }>(),
   { isTotal: false, rowIndex: 0 }
 );
@@ -121,7 +122,7 @@ watch(
   >
     {{ gwpNwpAmount(rowIndex, false) }}
   </td>
-  <template v-if="portfolioStore.getExposureLength() > 0 && dashboardStore.isShowingExposure">
+  <template v-if="portfolioStore.getExposureLength() > 0 && dashboardStore.isShowingExposure && !props.totalUltimateOnly">
     <td
       class="fixWidth bg-white text-sybil-teal"
       :class="{
