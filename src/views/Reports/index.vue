@@ -109,6 +109,9 @@
             <button @click="startSlideshow(viewerModal.report)" class="action-btn slideshow-btn" title="Start Slideshow">
               Slideshow
             </button>
+            <button @click="openNewBounceModal(viewerModal.report)" class="action-btn new-bounce-btn" title="Create Report with New Bounce">
+              New Bounce
+            </button>
             <button @click="closeViewer" class="close-btn">×</button>
           </div>
         </div>
@@ -364,6 +367,96 @@ const startSlideshow = (report: Report | null) => {
   closeViewer()
   router.push(`/reports/${report.id}/slideshow`)
 }
+
+const extractWizardSettingsFromReport = (report: Report): any => {
+  const wizardSettings: any = {}
+  
+  if (report.slides && Array.isArray(report.slides)) {
+    report.slides.forEach((slide, slideIndex) => {
+      if (slide.elements && Array.isArray(slide.elements)) {
+        slide.elements.forEach((element, elementIndex) => {
+          if (element.type === 'dashboard-table' || element.type === 'performance-chart') {
+            const elementKey = `${slide.id}_${element.id}`
+            
+            wizardSettings[elementKey] = {
+              slideId: slide.id,
+              elementId: element.id,
+              wizardType: element.type === 'performance-chart' ? 'performance-chart' : 'dashboard-table',
+              dashboardConfig: {
+                mqy: element._snapshot?.mqy || element.columnConfig?.mqy || 'quarter',
+                period: element._snapshot?.uw_acc || element.accidentUnderwriting || 'uw',
+                bespoke: element._snapshot?.isBindedYears || false,
+                premium: element._snapshot?.gwpnwp || element.columnConfig?.gwpnwp || 'GWP',
+                basis: element._snapshot?.underwriting_loss_ratios || 'Written',
+                ccr_nlr: element._snapshot?.ccr_nlr || element.columnConfig?.ccr_nlr || 'CCR',
+                seasonality: element._snapshot?.seasonFactor !== undefined ? element._snapshot.seasonFactor : false,
+                display: element._snapshot?.ratio_amount || element.columnConfig?.ratio_amount || 'ratios'
+              },
+              dashboardFilters: {
+                accidentUnderwriting: element.accidentUnderwriting || 'uw',
+                selectedFilters: element.selectedFilters || {}
+              },
+              columnConfig: element.columnConfig || {
+                showColumn: element._snapshot?.showColumn || {},
+                margin: element._snapshot?.margin || {},
+                showColumnTotal: element._snapshot?.showColumnTotal || false,
+                totalMargin: element._snapshot?.totalMargin || 0
+              },
+              elementFlags: {
+                attritionalOnly: element.attritionalOnly || false,
+                largeOnly: element.largeOnly || false,
+                weatherOnly: element.weatherOnly || false,
+                totalUltimateOnly: element.totalUltimateOnly || false,
+                lossRatiosOnly: element.lossRatiosOnly || false,
+                attritionalLargeExpanded: element.attritionalLargeExpanded || false,
+                largeLossLoad: element.largeLossLoad || false
+              },
+              chartConfig: element.type === 'performance-chart' ? {
+                isGLR: element._snapshot?.graphConfig?.isGLR !== undefined ? element._snapshot.graphConfig.isGLR : true,
+                isNormalised: element._snapshot?.graphConfig?.isNormalised !== undefined ? element._snapshot.graphConfig.isNormalised : true,
+                showGwpBars: element._snapshot?.graphConfig?.showGwpBars !== undefined ? element._snapshot.graphConfig.showGwpBars : true,
+                showGepBars: element._snapshot?.graphConfig?.showGepBars !== undefined ? element._snapshot.graphConfig.showGepBars : true,
+                showSeasonalityApriori: element._snapshot?.graphConfig?.showSeasonalityApriori !== undefined ? element._snapshot.graphConfig.showSeasonalityApriori : true
+              } : null
+            }
+          }
+        })
+      }
+    })
+  }
+  
+  return wizardSettings
+}
+
+const openNewBounceModal = async (report: Report | null) => {
+  if (!report) return
+  
+  try {
+    closeViewer()
+    
+    // Extract wizard settings from the report
+    const wizardSettings = extractWizardSettingsFromReport(report)
+
+    sessionStorage.setItem('sourceReportForNewBounce', JSON.stringify({
+      reportId: report.id,
+      reportName: report.name,
+      templateId: report.templateId,
+      templateName: report.templateName,
+      portfolioId: report.portfolioId,
+      portfolioName: report.portfolioName,
+      bounceId: report.bounceId,
+      bounceName: report.bounceName,
+      wizardSettings: wizardSettings  // Include extracted wizard settings
+    }))
+    
+    router.push(`/template/${report.templateId}`)
+  } catch (error) {
+    console.error('Error opening new bounce modal:', error)
+    showErrorModal('Failed to open template. Please try again.')
+  }
+}
+
+
 </script>
 
 <style scoped>
@@ -740,6 +833,18 @@ const startSlideshow = (report: Report | null) => {
 }
 
 .slideshow-btn:hover {
+  background: #55B691;
+  color: white;
+  border-color: #55B691;
+}
+
+.new-bounce-btn {
+  background: white;
+  color: #374151;
+  border-color: #e5e7eb;
+}
+
+.new-bounce-btn:hover {
   background: #55B691;
   color: white;
   border-color: #55B691;

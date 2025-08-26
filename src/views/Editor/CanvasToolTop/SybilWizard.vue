@@ -114,7 +114,8 @@ const props = defineProps({
   portfolio: { type: Object, default: null },
   bounce: { type: Object, default: null },
   wizardType: { type: String, default: 'dashboard-table' },
-  element: { type: Object, default: null }
+  element: { type: Object, default: null },
+  prePopulatedSettings: { type: Object, default: null }
 })
 
 const dashboardStore = useDashboardStore()
@@ -192,6 +193,13 @@ onMounted(async () => {
       dashboardStore.setPortfolioData(portfolioData)
     }
   }
+  
+  if (props.prePopulatedSettings) {    
+    setTimeout(async () => {
+      await applyPrePopulatedSettings(props.prePopulatedSettings)
+    }, 100)
+  }
+  
   isLoading.value = false
 })
 
@@ -258,6 +266,81 @@ function setNormalised(val) { dashboardStore.graphConfig.isNormalised = val }
 function setShowGwpBars(val) { dashboardStore.graphConfig.showGwpBars = val }
 function setShowGepBars(val) { dashboardStore.graphConfig.showGepBars = val }
 function setShowSeasonalityApriori(val) { dashboardStore.graphConfig.showSeasonalityApriori = val }
+
+const applyPrePopulatedSettings = async (settings) => {
+  try {
+    const { dashboardConfig, dashboardFilters, chartConfig } = settings
+    if (dashboardConfig) {
+      if (dashboardConfig.mqy && dashboardConfig.mqy !== dashboards.value.mqy) {
+        setPeriod(dashboardConfig.mqy)
+        await new Promise(resolve => setTimeout(resolve, 50))
+      }
+      
+      if (dashboardConfig.period) {
+        await setUwMode(dashboardConfig.period)
+        await new Promise(resolve => setTimeout(resolve, 50))
+      }
+      
+      if (dashboardConfig.premium && dashboards.value.gwpnwp !== dashboardConfig.premium) {
+        switchGwpNwp(dashboardConfig.premium)
+        await new Promise(resolve => setTimeout(resolve, 50))
+      }
+      
+      if (dashboardConfig.basis && underwriting_loss_ratios.value !== dashboardConfig.basis) {
+        setBasis(dashboardConfig.basis)
+        await new Promise(resolve => setTimeout(resolve, 50))
+      }
+      
+      if (dashboardConfig.ccr_nlr && dashboards.value.ccr_nlr !== dashboardConfig.ccr_nlr) {
+        setCcrNlr(dashboardConfig.ccr_nlr)
+        await new Promise(resolve => setTimeout(resolve, 50))
+      }
+      
+      if (dashboardConfig.seasonality !== undefined && !!dashboards.value.seasonFactor !== !!dashboardConfig.seasonality) {
+        setSeasonality(dashboardConfig.seasonality)
+        await new Promise(resolve => setTimeout(resolve, 50))
+      }
+      
+      if (dashboardConfig.display && dashboards.value.ratio_amount !== dashboardConfig.display) {
+        setRatioAmount(dashboardConfig.display)
+        await new Promise(resolve => setTimeout(resolve, 50))
+      }
+    }
+    
+    if (dashboardFilters && dashboardFilters.selectedFilters) {
+      Object.keys(dashboardFilters.selectedFilters).forEach(category => {
+        dashboardStore.setFilterSelection(category, dashboardFilters.selectedFilters[category])
+      })
+    }
+    
+    // Apply chart configuration (if performance chart)
+    if (chartConfig && isChartWizard.value) {     
+      if (chartConfig.isGLR !== undefined) {
+        setCommission(chartConfig.isGLR)
+        await new Promise(resolve => setTimeout(resolve, 50))
+      }
+      if (chartConfig.isNormalised !== undefined) {
+        setNormalised(chartConfig.isNormalised)
+        await new Promise(resolve => setTimeout(resolve, 50))
+      }
+      if (chartConfig.showGwpBars !== undefined) {
+        setShowGwpBars(chartConfig.showGwpBars)
+        await new Promise(resolve => setTimeout(resolve, 50))
+      }
+      if (chartConfig.showGepBars !== undefined) {
+        setShowGepBars(chartConfig.showGepBars)
+        await new Promise(resolve => setTimeout(resolve, 50))
+      }
+      if (chartConfig.showSeasonalityApriori !== undefined) {
+        setShowSeasonalityApriori(chartConfig.showSeasonalityApriori)
+        await new Promise(resolve => setTimeout(resolve, 50))
+      }
+    }
+    
+  } catch (error) {
+    console.error('❌ Error applying pre-populated settings:', error)
+  }
+}
 
 const finish = () => {
   const data = {

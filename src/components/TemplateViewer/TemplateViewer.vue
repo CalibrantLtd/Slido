@@ -96,6 +96,8 @@
     <PortfolioBounceSelectionModal
       :visible="isPortfolioModalVisible"
       :portfolios-data="portfoliosData"
+      :pre-selected-portfolio-id="newBounceMode ? sourceReportData?.portfolioId : undefined"
+      :new-bounce-mode="newBounceMode"
       context="editor"
       @close="onPortfolioModalClose"
       @confirm="onPortfolioModalConfirm"
@@ -115,6 +117,7 @@
         :bounce="currentWizardData.wizardInstance.bounce"
         :element="currentWizardData.wizardInstance.mockTable?.element"
         :wizard-type="currentWizardData.wizardInstance.wizardType"
+        :pre-populated-settings="currentWizardData.wizardInstance.prePopulatedSettings"
         @close="onWizardClose"
         @finish="onWizardFinish"
       />
@@ -252,6 +255,10 @@ const successModal = ref({
   visible: false,
   message: ''
 })
+
+const newBounceMode = ref(false)
+const sourceReportData = ref<any>(null)
+const prePopulatedWizardSettings = ref<any>(null)
 
 const slideWidth = 720
 const slideHeight = 405
@@ -398,7 +405,13 @@ const onPortfolioModalConfirm = async (portfolio: any, bounce: any) => {
     
     if (mockDashboardTables.length > 0) {
       hasProcessedTables.value = true
-      await showDashboardWizardForMockTables(mockDashboardTables, portfolio, bounce)
+      
+      if (newBounceMode.value && prePopulatedWizardSettings.value) {
+        await applyPrePopulatedSettingsAndGenerate(mockDashboardTables, portfolio, bounce)
+      } else {
+        // Normal flow: show wizard
+        await showDashboardWizardForMockTables(mockDashboardTables, portfolio, bounce)
+      }
     } else {
       showNoTablesModal()
     }
@@ -440,11 +453,16 @@ const showDashboardWizardForMockTables = async (mockTables: any[], portfolio: an
     const wizardType = mockTable.element.type === 'performance-chart' ? 'performance-chart' : 
                        'dashboard-table'
     
+    // Get pre-populated settings for this specific element
+    const elementKey = `${mockTable.slideId}_${mockTable.elementId}`
+    const prePopSettings = prePopulatedWizardSettings.value?.[elementKey] || null
+    
     const wizardInstance = {
       portfolio,
       bounce,
       mockTable,
-      wizardType
+      wizardType,
+      prePopulatedSettings: prePopSettings  // Pass pre-populated settings
     }
     
     return new Promise((resolve, reject) => {
@@ -453,6 +471,217 @@ const showDashboardWizardForMockTables = async (mockTables: any[], portfolio: an
   })
   
   await Promise.all(wizardPromises)
+}
+
+const applyPrePopulatedSettingsAndGenerate = async (mockTables: any[], portfolio: any, bounce: any) => {
+  globalStore.setLoading(true)
+  
+  try {
+    for (const mockTable of mockTables) {
+      // Get pre-populated settings for this specific element
+      const elementKey = `${mockTable.slideId}_${mockTable.elementId}`
+      const prePopSettings = prePopulatedWizardSettings.value?.[elementKey]
+      
+      if (prePopSettings) {
+        try {
+          await applySettingsToDashboardStore(prePopSettings, portfolio, bounce, mockTable.element)
+          
+          const wizardData = await generateWizardDataFromCurrentState(prePopSettings)
+          
+          const mockWizardInstance = {
+            wizardInstance: {
+              portfolio: portfolio,
+              bounce: bounce,
+              mockTable: mockTable,
+              wizardType: prePopSettings.wizardType
+            }
+          }
+          
+          await replaceMockTableWithRealData(mockTable, wizardData, mockWizardInstance)
+        } catch (error) {
+          console.error(`❌ Error processing element ${elementKey}:`, error)
+        }
+      }
+    }
+    
+    await exportTemplateWithRealData()
+    
+    router.push('/reports')
+    
+  } catch (error) {
+    console.error('❌ Error auto-applying settings:', error)
+    throw error
+  } finally {
+    // Hide loading indicator (same as SybilWizard finish)
+    globalStore.setLoading(false)
+  }
+}
+
+const applySettingsToDashboardStore = async (settings: any, portfolio: any, bounce: any, element: any) => {
+  try {
+    const { dashboardConfig, dashboardFilters, chartConfig } = settings
+    
+    const { useDashboardStore } = await import('@/store/dashboard')
+    const dashboardStore = useDashboardStore()
+    
+    try {
+      await loadPortfolioDataForElement(element, portfolio, bounce)
+    } catch (error) {
+      console.warn('⚠️ Portfolio data loading failed, continuing with settings application:', error)
+    }
+    
+    if (dashboardConfig) {
+      if (dashboardConfig.mqy && dashboardConfig.mqy !== dashboardStore.dashboards.mqy) {
+        dashboardStore.setPeriod(dashboardConfig.mqy)
+        await new Promise(resolve => setTimeout(resolve, 50))
+      }
+      
+      if (dashboardConfig.period) {
+        await setUwModeProgrammatically(dashboardConfig.period)
+        await new Promise(resolve => setTimeout(resolve, 50))
+      }
+      
+      if (dashboardConfig.premium && dashboardStore.dashboards.gwpnwp !== dashboardConfig.premium) {
+        dashboardStore.switch_gwpnwp_amount()
+        await new Promise(resolve => setTimeout(resolve, 50))
+      }
+      
+      if (dashboardConfig.basis && dashboardStore.underwriting_loss_ratios !== dashboardConfig.basis) {
+        dashboardStore.underwritingLossRatiosChange()
+        await new Promise(resolve => setTimeout(resolve, 50))
+      }
+      
+      if (dashboardConfig.ccr_nlr && dashboardStore.dashboards.ccr_nlr !== dashboardConfig.ccr_nlr) {
+        dashboardStore.changeccrnlr()
+        await new Promise(resolve => setTimeout(resolve, 50))
+      }
+      
+      if (dashboardConfig.seasonality !== undefined && !!dashboardStore.dashboards.seasonFactor !== !!dashboardConfig.seasonality) {
+        dashboardStore.changeSeas()
+        await new Promise(resolve => setTimeout(resolve, 50))
+      }
+      
+      if (dashboardConfig.display && dashboardStore.dashboards.ratio_amount !== dashboardConfig.display) {
+        dashboardStore.switch_ratio_amount()
+        await new Promise(resolve => setTimeout(resolve, 50))
+      }
+    }
+    
+    if (dashboardFilters && dashboardFilters.selectedFilters) {
+      Object.keys(dashboardFilters.selectedFilters).forEach(category => {
+        dashboardStore.setFilterSelection(category, dashboardFilters.selectedFilters[category])
+      })
+    }
+    
+    if (chartConfig && element.type === 'performance-chart') {
+      if (chartConfig.isGLR !== undefined) {
+        dashboardStore.graphConfig.isGLR = chartConfig.isGLR
+      }
+      if (chartConfig.isNormalised !== undefined) {
+        dashboardStore.graphConfig.isNormalised = chartConfig.isNormalised
+      }
+      if (chartConfig.showGwpBars !== undefined) {
+        dashboardStore.graphConfig.showGwpBars = chartConfig.showGwpBars
+      }
+      if (chartConfig.showGepBars !== undefined) {
+        dashboardStore.graphConfig.showGepBars = chartConfig.showGepBars
+      }
+      if (chartConfig.showSeasonalityApriori !== undefined) {
+        dashboardStore.graphConfig.showSeasonalityApriori = chartConfig.showSeasonalityApriori
+      }
+    }
+    
+  } catch (error) {
+    console.error('❌ Error applying settings to dashboard store:', error)
+    throw error
+  }
+}
+
+const setUwModeProgrammatically = async (target: string) => {
+  const { useDashboardStore } = await import('@/store/dashboard')
+  const dashboardStore = useDashboardStore()
+  
+  const isYear = dashboardStore.dashboards.mqy === 'year'
+  const inAcc = dashboardStore.dashboards.uw_acc === 'acc'
+  const inUw = dashboardStore.dashboards.uw_acc === 'uw'
+  const inBespoke = dashboardStore.isBindedYears
+
+  if (target === 'acc') {
+    if (inAcc) return
+    if (inBespoke) {
+      await dashboardStore.change_uw_acc() // bespoke -> uw
+      await dashboardStore.change_uw_acc() // uw -> acc
+    } else if (inUw) {
+      await dashboardStore.change_uw_acc() // uw -> acc
+    }
+    return
+  }
+
+  if (target === 'uw') {
+    if (inUw && !inBespoke) return
+    if (inBespoke) {
+      await dashboardStore.change_uw_acc() // bespoke -> uw
+    } else if (inAcc) {
+      await dashboardStore.change_uw_acc() // acc -> uw
+    }
+    return
+  }
+
+  if (target === 'bespoke') {
+    if (!isYear) return
+    if (inBespoke) return
+    if (inAcc) {
+      await dashboardStore.change_uw_acc() // acc -> uw
+      await dashboardStore.change_uw_acc() // uw -> bespoke
+    } else if (inUw) {
+      await dashboardStore.change_uw_acc() // uw -> bespoke
+    }
+  }
+}
+
+const generateWizardDataFromCurrentState = async (prePopSettings: any) => {
+  const { useDashboardStore } = await import('@/store/dashboard')
+  const dashboardStore = useDashboardStore()
+  
+  return {
+    wizardType: prePopSettings.wizardType,
+    dashboardConfig: {
+      mqy: dashboardStore.dashboards.mqy,
+      period: dashboardStore.dashboards.uw_acc,
+      bespoke: dashboardStore.isBindedYears,
+      premium: dashboardStore.dashboards.gwpnwp,
+      basis: dashboardStore.underwriting_loss_ratios,
+      ccr_nlr: dashboardStore.dashboards.ccr_nlr,
+      seasonality: dashboardStore.dashboards.seasonFactor,
+      display: dashboardStore.dashboards.ratio_amount
+    },
+    dashboardFilters: {
+      accidentUnderwriting: dashboardStore.dashboards.uw_acc,
+      selectedFilters: dashboardStore.selectedFilters
+    },
+    columnConfig: {
+      showColumn: dashboardStore.showColumn,
+      margin: dashboardStore.margin,
+      showColumnTotal: dashboardStore.showColumnTotal,
+      totalMargin: dashboardStore.totalMargin
+    },
+    elementFlags: {
+      attritionalOnly: false,
+      largeOnly: false,
+      weatherOnly: false,
+      totalUltimateOnly: false,
+      lossRatiosOnly: false,
+      attritionalLargeExpanded: false,
+      largeLossLoad: false
+    },
+    chartConfig: prePopSettings.wizardType === 'performance-chart' ? {
+      isGLR: dashboardStore.graphConfig.isGLR,
+      isNormalised: dashboardStore.graphConfig.isNormalised,
+      showGwpBars: dashboardStore.graphConfig.showGwpBars,
+      showGepBars: dashboardStore.graphConfig.showGepBars,
+      showSeasonalityApriori: dashboardStore.graphConfig.showSeasonalityApriori
+    } : null
+  }
 }
 
 const exportTemplateWithRealData = async () => {
@@ -690,7 +919,8 @@ const onShowWizard = async (wizardInstance: any, resolve: (value: any) => void, 
       portfolio: wizardInstance.portfolio,
       bounce: wizardInstance.bounce,
       mockTable: wizardInstance.mockTable,
-      wizardType: wizardInstance.wizardType
+      wizardType: wizardInstance.wizardType,
+      prePopulatedSettings: wizardInstance.prePopulatedSettings  
     }
     
     wizardQueue.value.push({
@@ -1082,8 +1312,30 @@ const shouldHideElement = (element: any) => {
   return false
 }
 
-onMounted(() => {
-  loadTemplate()
+onMounted(async () => {
+  await loadTemplate()
+  
+  const sourceReportJson = sessionStorage.getItem('sourceReportForNewBounce')
+  if (sourceReportJson) {
+    try {
+      sourceReportData.value = JSON.parse(sourceReportJson)
+      newBounceMode.value = true
+      
+      if (sourceReportData.value.wizardSettings) {
+        prePopulatedWizardSettings.value = sourceReportData.value.wizardSettings
+      }
+      
+      sessionStorage.removeItem('sourceReportForNewBounce')
+      
+      setTimeout(async () => {
+        await addPortfolioData()
+      }, 300)
+      
+    } catch (error) {
+      console.error('Error parsing source report data:', error)
+      sessionStorage.removeItem('sourceReportForNewBounce')
+    }
+  }
 })
 </script>
 

@@ -2,7 +2,9 @@
   <div v-if="isVisible" class="modal-overlay" @click="onClose">
     <div class="modal-container" @click.stop>
       <div class="modal-header">
-        <h2 class="modal-title">Add Portfolio Data</h2>
+        <h2 class="modal-title">
+          {{ newBounceMode && selectedPortfolio ? `Select New Bounce for: ${selectedPortfolio.name}` : (newBounceMode ? 'Select New Bounce' : 'Add Portfolio Data') }}
+        </h2>
         <button class="close-btn" @click="onClose">×</button>
       </div>
       
@@ -13,12 +15,13 @@
           <div class="portfolio-dropdown-container">
             <div 
               class="custom-dropdown compact"
-              :class="{ 'open': isDropdownOpen }"
-              @click="toggleDropdown"
+              :class="{ 'open': isDropdownOpen, 'disabled': newBounceMode }"
+              @click="!newBounceMode && toggleDropdown()"
             >
-              <div class="dropdown-selected compact" ref="dropdownRef">
+              <div class="dropdown-selected compact" ref="dropdownRef" :class="{ 'disabled': newBounceMode }">
                 {{ selectedPortfolio?.name || 'Choose a portfolio...' }}
-                <span class="dropdown-arrow">▼</span>
+                <span class="dropdown-arrow" v-if="!newBounceMode">▼</span>
+                <span class="locked-icon" v-if="newBounceMode">🔒</span>
               </div>
             </div>
             <div v-if="isDropdownOpen" class="dropdown-options compact">
@@ -119,7 +122,7 @@
             :class="{ 'loading': isLoading }"
             @click="onConfirm"
           >
-            {{ isLoading ? 'Adding...' : 'Add Portfolio Data' }}
+            {{ isLoading ? (newBounceMode ? 'Creating...' : 'Adding...') : (newBounceMode ? 'Create New Report' : 'Add Portfolio Data') }}
           </button>
         </div>
       </div>
@@ -153,7 +156,9 @@ import { ElMenu, ElSubMenu, ElMenuItem, ElIcon, ElTooltip } from 'element-plus'
 const props = defineProps<{
   visible: boolean
   portfoliosData?: any
-  context?: 'template' | 'editor' 
+  context?: 'template' | 'editor' | 'reports'
+  preSelectedPortfolioId?: string
+  newBounceMode?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -197,6 +202,8 @@ const isVisible = computed({
     }
   }
 })
+
+const newBounceMode = computed(() => props.newBounceMode || false)
 
 const onClose = () => {
   selectedPortfolio.value = null
@@ -330,6 +337,13 @@ const onConfirm = async () => {
 
   isLoading.value = true
   try {
+    // If in newBounceMode (reports context), skip all wizards
+    if (props.newBounceMode || props.context === 'reports') {
+      emit('confirm', selectedPortfolio.value, selectedBounce.value)
+      onClose()
+      return
+    }
+    
     if (props.context === 'editor') {
       emit('confirm', selectedPortfolio.value, selectedBounce.value)
       onClose()
@@ -459,7 +473,7 @@ const fetchPortfolios = async () => {
   }
 }
 
-watch(() => props.visible, (newVisible) => {
+watch(() => props.visible, async (newVisible) => {
   if (newVisible) {
     if (props.portfoliosData) {
       // Use pre-loaded data
@@ -467,12 +481,24 @@ watch(() => props.visible, (newVisible) => {
       draftList.value = props.portfoliosData.draft_list
     } else {
       // Fetch data if not provided
-      fetchPortfolios()
+      await fetchPortfolios()
     }
-    selectedPortfolio.value = null
-    selectedBounce.value = null
-    selectedPortfolioId.value = ''
-    isDropdownOpen.value = false
+    
+    // Check if we should pre-select a portfolio
+    if (props.preSelectedPortfolioId && props.newBounceMode) {
+      const preSelectedPortfolio = portfolios.value.find(p => p.id === props.preSelectedPortfolioId)
+      if (preSelectedPortfolio) {
+        await selectPortfolio(preSelectedPortfolio)
+      } else {
+        console.error('❌ Portfolio not found:', props.preSelectedPortfolioId)
+        console.log('Available portfolios:', portfolios.value.map(p => ({ id: p.id, name: p.name })))
+      }
+    } else {
+      selectedPortfolio.value = null
+      selectedBounce.value = null
+      selectedPortfolioId.value = ''
+      isDropdownOpen.value = false
+    }
   }
 })
 
@@ -796,6 +822,26 @@ const onSelectOnMenu = (index: string) => {
 .dropdown-selected:hover {
   border-color: #55B691;
   box-shadow: 0 2px 8px rgba(85, 182, 145, 0.1);
+}
+
+.dropdown-selected.disabled {
+  background: #f3f4f6;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.dropdown-selected.disabled:hover {
+  border-color: #e5e7eb;
+  box-shadow: none;
+}
+
+.custom-dropdown.disabled {
+  cursor: not-allowed;
+}
+
+.locked-icon {
+  font-size: 14px;
+  color: #6b7280;
 }
 
 .dropdown-arrow {
