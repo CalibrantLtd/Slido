@@ -99,7 +99,8 @@ const isSimplifiedTemplate = computed(() => {
          props.element.largeOnly || 
          props.element.weatherOnly || 
          props.element.totalUltimateOnly ||
-         props.element.lossRatiosOnly
+         props.element.lossRatiosOnly ||
+         props.element.largeLossLoad
 })
 
 const hideSeasonalityAdjustment = computed(() => {
@@ -110,7 +111,8 @@ const hideSeasonalityAdjustment = computed(() => {
          props.element.weatherOnly || 
          props.element.totalUltimateOnly ||
          props.element.lossRatiosOnly ||
-         props.element.attritionalLargeExpanded
+         props.element.attritionalLargeExpanded ||
+         props.element.largeLossLoad
 })
 
 onMounted(async () => {  
@@ -290,6 +292,40 @@ const finish = () => {
   align-items: center; 
   gap: 8px; 
   margin: 6px 0;
+}
+
+.radio input[type="radio"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  cursor: pointer;
+}
+
+.radio input[type="radio"]:not(:checked) {
+  appearance: none;
+  border: 2px solid #d1d5db;
+  border-radius: 50%;
+  background: white;
+}
+
+.radio input[type="radio"]:checked {
+  appearance: none;
+  border: 2px solid #3b82f6;
+  border-radius: 50%;
+  background: #3b82f6;
+  position: relative;
+}
+
+.radio input[type="radio"]:checked::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: white;
 }
 
 .footer {

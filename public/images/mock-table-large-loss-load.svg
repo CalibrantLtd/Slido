@@ -35,16 +35,16 @@
   <text x="385" y="50" class="text">0</text>
   
   <!-- Row 2 -->
-  <rect x="0" y="60" width="125" height="30" fill="#d5e8d4" stroke="#ccc"/>
+  <rect x="0" y="60" width="125" height="30" fill="#ffffff" stroke="#ccc"/>
   <text x="10" y="80" class="text">X</text>
   
-  <rect x="125" y="60" width="125" height="30" fill="#d5e8d4" stroke="#ccc"/>
+  <rect x="125" y="60" width="125" height="30" fill="#ffffff" stroke="#ccc"/>
   <text x="135" y="80" class="text">0</text>
   
-  <rect x="250" y="60" width="125" height="30" fill="#d5e8d4" stroke="#ccc"/>
+  <rect x="250" y="60" width="125" height="30" fill="#ffffff" stroke="#ccc"/>
   <text x="260" y="80" class="text">0</text>
   
-  <rect x="375" y="60" width="125" height="30" fill="#d5e8d4" stroke="#ccc"/>
+  <rect x="375" y="60" width="125" height="30" fill="#ffffff" stroke="#ccc"/>
   <text x="385" y="80" class="text">0</text>
   
   <!-- Row 3 -->

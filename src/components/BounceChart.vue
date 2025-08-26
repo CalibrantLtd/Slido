@@ -27,7 +27,7 @@ onMounted(() => { onLayout(a) })
 const elements = ref<any>(props.data)
 const selectedId = ref<number | null>(props.selectedNode)
 const a = useVueFlow()
-const defaultZoom = ref(2)
+const defaultZoom = ref(1.2)
 
 function onLayout(i: ViewportFunctions) {
   const direction = 'TB'

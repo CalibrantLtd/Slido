@@ -8,24 +8,24 @@
       
       <div class="modal-content">
         <!-- Portfolio Selection -->
-        <div class="selection-section">
-          <h3 class="section-title">Select Portfolio</h3>
+        <div class="selection-section compact">
+          <h3 class="section-title compact">Select Portfolio</h3>
           <div class="portfolio-dropdown-container">
             <div 
-              class="custom-dropdown"
+              class="custom-dropdown compact"
               :class="{ 'open': isDropdownOpen }"
               @click="toggleDropdown"
             >
-              <div class="dropdown-selected" ref="dropdownRef">
+              <div class="dropdown-selected compact" ref="dropdownRef">
                 {{ selectedPortfolio?.name || 'Choose a portfolio...' }}
                 <span class="dropdown-arrow">▼</span>
               </div>
             </div>
-            <div v-if="isDropdownOpen" class="dropdown-options">
+            <div v-if="isDropdownOpen" class="dropdown-options compact">
               <div
                 v-for="portfolio in sortedPortfolios"
               :key="portfolio.id"
-                class="dropdown-option"
+                class="dropdown-option compact"
                 :class="{ 'selected': selectedPortfolio?.id === portfolio.id }"
                 @click.stop="selectPortfolio(portfolio)"
               >
@@ -36,10 +36,10 @@
         </div>
 
         <!-- Bounce Selection -->
-        <div v-if="selectedPortfolio" class="selection-section" ref="bouncesSection">
-          <h3 class="section-title">Select Bounce</h3>
-          <div class="bounce-layout">
-            <div class="bounce-tree-container" style="width: 350px; height: 100%; overflow-y: auto;">
+        <div v-if="selectedPortfolio" class="selection-section compact" ref="bouncesSection">
+          <h3 class="section-title compact">Select Bounce</h3>
+          <div class="bounce-layout compact">
+            <div class="bounce-tree-container compact" style="width: 280px; height: 100%; overflow-y: auto;">
             <div v-if="!groupedBounceData || Object.keys(groupedBounceData).length === 0" class="no-bounces">
               No bounces available
             </div>
@@ -97,7 +97,7 @@
               </el-sub-menu>
             </el-menu>
               </div>
-            <div class="bounce-chart" style="height: 100%;">
+            <div class="bounce-chart compact" style="height: 100%;">
               <BounceChart
                 v-if="elements && elements.length"
                 :data="elements"
@@ -109,18 +109,19 @@
             </div>
           </div>
         </div>
-      </div>
 
-      <div class="modal-footer">
-        <button class="cancel-btn" @click="onClose">Cancel</button>
-        <button
-          class="confirm-btn"
-          :disabled="!selectedPortfolio || !selectedBounce"
-          :class="{ 'loading': isLoading }"
-          @click="onConfirm"
-        >
-          {{ isLoading ? 'Adding...' : 'Add Portfolio Data' }}
-        </button>
+        <!-- Footer buttons inside content area -->
+        <div class="modal-footer">
+          <button class="cancel-btn" @click="onClose">Cancel</button>
+          <button
+            class="confirm-btn"
+            :disabled="!selectedPortfolio || !selectedBounce"
+            :class="{ 'loading': isLoading }"
+            @click="onConfirm"
+          >
+            {{ isLoading ? 'Adding...' : 'Add Portfolio Data' }}
+          </button>
+        </div>
       </div>
     </div>
     
@@ -581,7 +582,7 @@ const onSelectOnMenu = (index: string) => {
 }
 
 .modal-header {
-  padding: 20px 24px;
+  padding: 6px 24px;
   border-bottom: 1px solid #e5e7eb;
   display: flex;
   justify-content: space-between;
@@ -590,7 +591,7 @@ const onSelectOnMenu = (index: string) => {
 
 .modal-title {
   margin: 0;
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 600;
   color: #1f2937;
 }
@@ -612,8 +613,8 @@ const onSelectOnMenu = (index: string) => {
 }
 
 .modal-content {
-  padding: 20px;
-  height: calc(100vh - 160px);
+  padding: 8px 20px 0 20px;
+  height: calc(100vh - 120px);
   overflow-y: auto;
   overflow-x: visible;
   display: flex;
@@ -627,11 +628,21 @@ const onSelectOnMenu = (index: string) => {
   margin-bottom: 24px;
 }
 
+.selection-section.compact {
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
 .bounce-layout {
   display: flex;
   gap: 16px;
   flex: 1;
   min-height: 0;
+}
+
+.bounce-layout.compact {
+  gap: 12px;
+  min-height: 270px;
 }
 
 .bounce-chart {
@@ -643,6 +654,10 @@ const onSelectOnMenu = (index: string) => {
   position: relative;
   padding: 0;
   overflow: hidden;
+}
+
+.bounce-chart.compact {
+  min-height: 270px;
 }
 
 .bounce-graph {
@@ -736,6 +751,10 @@ const onSelectOnMenu = (index: string) => {
   margin: 0;
 }
 
+.section-title.compact {
+  font-size: 14px;
+}
+
 .portfolio-dropdown-container {
   width: 100%;
   position: relative;
@@ -761,6 +780,11 @@ const onSelectOnMenu = (index: string) => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.dropdown-selected.compact {
+  padding: 8px 12px;
+  font-size: 13px;
 }
 
 .dropdown-selected:hover {
@@ -790,6 +814,11 @@ const onSelectOnMenu = (index: string) => {
   min-width: 300px;
 }
 
+.dropdown-options.compact {
+  max-height: 160px;
+  min-width: 250px;
+}
+
 .dropdown-option {
   padding: 12px 16px;
   font-size: 14px;
@@ -797,6 +826,11 @@ const onSelectOnMenu = (index: string) => {
   cursor: pointer;
   transition: all 0.2s ease;
   border-bottom: 1px solid #f3f4f6;
+}
+
+.dropdown-option.compact {
+  padding: 8px 12px;
+  font-size: 13px;
 }
 
 .dropdown-option:last-child {
@@ -820,6 +854,10 @@ const onSelectOnMenu = (index: string) => {
   background: white;
   overflow: hidden;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.bounce-tree-container.compact {
+  box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1);
 }
 
 .bounce-menu {
@@ -853,19 +891,24 @@ const onSelectOnMenu = (index: string) => {
 }
 
 .modal-footer {
-  padding: 20px 24px;
-  border-top: 1px solid #e5e7eb;
+  padding: 8px 0 12px 0;
+  border-top: none;
   display: flex;
   justify-content: flex-end;
   gap: 12px;
   flex-shrink: 0;
+  margin-top: 2px;
+  background: white;
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
 }
 
 .cancel-btn,
 .confirm-btn {
-  padding: 10px 16px;
-  border-radius: 6px;
-  font-size: 14px;
+  padding: 6px 12px;
+  border-radius: 5px;
+  font-size: 12px;
   font-weight: 500;
   cursor: pointer;
   border: none;
