@@ -155,11 +155,27 @@
         <p>{{ successModal.message }}</p>
       </div>
     </div>
+
+    <div 
+      v-if="mountAllTablesForExport"
+      style="position: absolute; left: -10000px; top: -10000px; width: 0; height: 0; overflow: hidden;"
+    >
+      <div v-for="(slide, sIdx) in slides" :key="slide.id || sIdx">
+        <template v-for="(el, eIdx) in slide.elements || []" :key="el.id || eIdx">
+          <DashboardTableElement
+            v-if="el.type === 'dashboard-table'"
+            :elementInfo="el"
+            :selectElement="() => {}"
+            :contextmenus="() => null"
+          />
+        </template>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { templateService } from '@/services/templateService'
 import { portfolioService } from '@/services/portfolioService'
@@ -238,6 +254,8 @@ const scaleY = slideHeight / 580
 const currentSlide = computed(() => {
   return slides.value[currentSlideIndex.value] || { elements: [] }
 })
+
+const mountAllTablesForExport = ref(false)
 
 // Get slide background style using the same logic as the editor
 const getSlideBackgroundStyle = (background: any) => {
@@ -469,6 +487,10 @@ const exportTemplateWithRealData = async () => {
     const useExport = await import('@/hooks/useExport')
     const { reportService } = await import('@/services/reportService')
     
+    mountAllTablesForExport.value = true
+    await nextTick()
+    await new Promise(resolve => setTimeout(resolve, 300))
+
     const pptBlob = await exportTemplateAsBlob(slides.value)
     
     const reportName = `${templateName.value} - ${portfolioName} - ${bounceName}`
@@ -495,6 +517,8 @@ const exportTemplateWithRealData = async () => {
     console.error('❌ Error exporting template:', error)
     restoreMockTables()
     showErrorModal('Failed to export template. Please try again.')
+  } finally {
+    mountAllTablesForExport.value = false
   }
 }
 

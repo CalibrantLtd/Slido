@@ -409,13 +409,25 @@ onBeforeUnmount(() => {
 
 const FUDGE_X = 0.998; // render slightly wider while still fitting container
 const FUDGE_Y = 0.995;
+const effectiveWidth = computed(() => {
+  const cw = containerWidthPx.value || props.containerWidth || 1;
+  // Ensure table always fills container by using max of natural width and container width
+  return Math.max(naturalWidth.value, cw);
+});
+
+const effectiveHeight = computed(() => {
+  const ch = containerHeightPx.value || props.containerHeight || 1;
+  // Ensure table always fills container by using max of natural height and container height
+  return Math.max(naturalHeight.value, ch);
+});
+
 const scaleX = computed(() => {
   const cw = containerWidthPx.value || props.containerWidth || 1;
-  return (cw / Math.max(naturalWidth.value, 1)) * FUDGE_X;
+  return (cw / effectiveWidth.value) * FUDGE_X;
 });
 const scaleY = computed(() => {
   const ch = containerHeightPx.value || props.containerHeight || 1;
-  return (ch / Math.max(naturalHeight.value, 1)) * FUDGE_Y;
+  return (ch / effectiveHeight.value) * FUDGE_Y;
 });
 
 const isScaledDown = computed(() => Math.min(scaleX.value, scaleY.value) < 1);
@@ -511,8 +523,8 @@ function toggleIsExposure() {
         :style="{
           transform: `scale(${scaleX}, ${scaleY})`,
           transformOrigin: 'top left',
-          width: naturalWidth + 'px',
-          height: naturalHeight + 'px'
+          width: effectiveWidth + 'px',
+          height: effectiveHeight + 'px'
         }"
       >
       <table 

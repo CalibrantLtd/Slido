@@ -703,9 +703,9 @@
       {
         "type": "dashboard-table",
         "id": "dashboard-table-1",
-        "left": 50,
+        "left": 200,
         "top": 170,
-        "width": 680,
+        "width": 500,
         "height": 320,
         "isTemplatePlaceholder": true,
         "portfolioId": null,
