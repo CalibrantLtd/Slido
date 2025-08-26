@@ -6,9 +6,9 @@
     </div>
     
     <div class="reports-content">
-      <div v-if="reports.length > 0" class="reports-grid">
+      <div v-if="paginatedReports.length > 0" class="reports-grid">
         <div 
-          v-for="report in reports" 
+          v-for="report in paginatedReports" 
           :key="report.id"
           class="report-item"
           @click="viewReport(report)"
@@ -27,6 +27,26 @@
             </button>
           </div>
         </div>
+      </div>
+
+      <div v-if="totalPages > 1" class="pagination">
+        <button 
+          @click="previousPage" 
+          :disabled="currentPage === 1"
+          class="pagination-btn"
+        >
+          ← Previous
+        </button>
+        <span class="pagination-info">
+          Page {{ currentPage }} of {{ totalPages }}
+        </span>
+        <button 
+          @click="nextPage" 
+          :disabled="currentPage === totalPages"
+          class="pagination-btn"
+        >
+          Next →
+        </button>
       </div>
       
       <div v-else class="empty-state">
@@ -126,7 +146,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { reportService, type Report } from '@/services/reportService'
 import { saveAs } from 'file-saver'
 
@@ -137,6 +157,30 @@ const contextMenu = ref({
   y: 0,
   report: null as Report | null
 })
+
+// Pagination
+const itemsPerPage = 9
+const currentPage = ref(1)
+
+const totalPages = computed(() => Math.ceil(reports.value.length / itemsPerPage))
+
+const paginatedReports = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage
+  const end = start + itemsPerPage
+  return reports.value.slice(start, end)
+})
+
+const previousPage = () => {
+  if (currentPage.value > 1) {
+    currentPage.value--
+  }
+}
+
+const nextPage = () => {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++
+  }
+}
 
 const deleteModal = ref({
   visible: false,
@@ -165,6 +209,7 @@ const loadReports = async () => {
     console.log('📊 Reports page: Loading reports...')
     reports.value = await reportService.getAllReports()
     console.log('📊 Reports page: Loaded reports:', reports.value.length)
+    currentPage.value = 1 // Reset to first page when loading new reports
   } catch (error) {
     console.error('📊 Reports page: Error loading reports:', error)
   }
@@ -320,26 +365,30 @@ const formatDate = (date: Date): string => {
 
 .reports-content {
   height: calc(100vh - 120px);
+  display: flex;
+  flex-direction: column;
 }
 
 .reports-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 20px;
-  padding: 20px 0;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+  padding: 16px 0;
+  flex: 1;
+  overflow-y: auto;
 }
 
 .report-item {
   background: white;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
-  padding: 16px;
+  padding: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
   position: relative;
   display: flex;
   flex-direction: column;
-  height: 120px;
+  height: 108px;
 }
 
 .report-item:hover {
@@ -357,7 +406,7 @@ const formatDate = (date: Date): string => {
 }
 
 .report-name {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
   color: #1f2937;
   margin: 0;
@@ -367,7 +416,7 @@ const formatDate = (date: Date): string => {
 }
 
 .report-date {
-  font-size: 14px;
+  font-size: 13px;
   color: #6b7280;
   margin: 0;
   white-space: nowrap;
@@ -727,6 +776,44 @@ const formatDate = (date: Date): string => {
   gap: 8px;
   justify-content: flex-end;
   border-top: 1px solid #e5e7eb;
+}
+
+/* Pagination styles */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin-top: 32px;
+  padding: 20px 0;
+}
+
+.pagination-btn {
+  padding: 8px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: white;
+  color: #374151;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination-info {
+  font-size: 14px;
+  color: #6b7280;
+  font-weight: 500;
 }
 </style>
 
