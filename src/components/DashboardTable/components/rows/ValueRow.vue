@@ -14,14 +14,23 @@ import generateRandomKey from '@/utils/generateRandomKey';
 const dashboardStore = useDashboardStore();
 const portfolioStore = usePortfolioStore();
 
-const visibleColumns = computed(() => props.visibleColumns || dashboardStore.visibleColumns);
-const ratioAmount = computed(() => dashboardStore.dashboards.ratio_amount);
-const isBindedYears = computed<boolean>(() => dashboardStore.isBindedYears);
-const dashboardDataColumn = computed(() => dashboardStore.dashboard_data_column);
+const visibleColumns = computed(() => props.visibleColumns || props.snapshot?.visibleColumns || dashboardStore.visibleColumns);
+const ratioAmount = computed(() => props.snapshot?.ratio_amount ?? dashboardStore.dashboards.ratio_amount);
+const isBindedYears = computed<boolean>(() => props.snapshot?.isBindedYears ?? dashboardStore.isBindedYears);
+const dashboardDataColumn = computed(() => props.snapshot?.dashboard_data_column ?? dashboardStore.dashboard_data_column);
 const claimsType = computed<string[]>(() => props.claimsType || portfolioStore.parameters.claims_nature || ['ATTRITIONAL', 'LARGE']);
 const maxSeasonality = computed(
-  () => dashboardStore.seasonality_parameters?.map((x) => Math.max(...x.map((y) => Math.abs(1 - y))))
+  () => props.snapshot?.seasonality_parameters?.map((x: any) => Math.max(...x.map((y: any) => Math.abs(1 - y)))) ?? dashboardStore.seasonality_parameters?.map((x) => Math.max(...x.map((y) => Math.abs(1 - y))))
 );
+const gwpnwp = computed(() => props.snapshot?.gwpnwp ?? dashboardStore.dashboards.gwpnwp);
+const uw_acc = computed(() => props.snapshot?.uw_acc ?? dashboardStore.dashboards.uw_acc);
+const underwriting_loss_ratios = computed(() => props.snapshot?.underwriting_loss_ratios ?? dashboardStore.underwriting_loss_ratios);
+const ccr_nlr = computed(() => props.snapshot?.ccr_nlr ?? dashboardStore.dashboards.ccr_nlr);
+const seasonFactor = computed(() => props.snapshot?.seasonFactor ?? dashboardStore.dashboards.seasonFactor);
+const isShowingExposure = computed(() => props.snapshot?.isShowingExposure ?? dashboardStore.isShowingExposure);
+const normalise = computed(() => props.snapshot?.portfolioParameters?.normalise ?? portfolioStore.normalise);
+const offMarginGWPGEP = computed(() => props.snapshot?.offMarginGWPGEP ?? dashboardStore.offMarginGWPGEP);
+const offMarginAprioriCCR = computed(() => props.snapshot?.offMarginAprioriCCR ?? dashboardStore.offMarginAprioriCCR);
 
 const props = withDefaults(
   defineProps<{
@@ -41,6 +50,7 @@ const props = withDefaults(
     visibleColumns?: number[];
     hideTotals?: boolean;
     totalUltimateOnly?: boolean;
+    snapshot?: any;
   }>(),
   { isTotal: false, rowIndex: 0 }
 );
@@ -68,7 +78,7 @@ async function claimsAttritionalInformation(period: string, dateUnit: string, ty
 }
 
 function gwpNwpAmount(index: number, isValue: boolean) {
-  if (dashboardStore.dashboards.gwpnwp == 'NWP') {
+  if (gwpnwp.value == 'NWP') {
     return numberWithCommas(claimsCalculation.value.gwpNWPAmount(index, 'NWP'), isValue);
   } else {
     return numberWithCommas(claimsCalculation.value.gwpNWPAmount(index, 'GWP'), isValue);
@@ -76,7 +86,7 @@ function gwpNwpAmount(index: number, isValue: boolean) {
 }
 
 function gepNepAmount(index: number, isValue: boolean) {
-  if (dashboardStore.dashboards.gwpnwp == 'NWP') {
+  if (gwpnwp.value == 'NWP') {
     return numberWithCommas(claimsCalculation.value.nepAmount(index), isValue);
   } else {
     return numberWithCommas(claimsCalculation.value.gepAmount(index), isValue);
@@ -122,7 +132,7 @@ watch(
   >
     {{ gwpNwpAmount(rowIndex, false) }}
   </td>
-  <template v-if="portfolioStore.getExposureLength() > 0 && dashboardStore.isShowingExposure && !props.totalUltimateOnly">
+  <template v-if="portfolioStore.getExposureLength() > 0 && isShowingExposure && !props.totalUltimateOnly">
     <td
       class="fixWidth bg-white text-sybil-teal"
       :class="{
@@ -169,12 +179,12 @@ watch(
       :style="{
         left:
           112 * (leftColumnSize + idx_claims) -
-          dashboardStore.offMarginGWPGEP +
+          offMarginGWPGEP +
           (<any>Object)
             .values(margin)
             .slice(0, idx_claims)
             .reduce((ps: number, s: number) => ps + s, 0) *
-            (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw'
+            (underwriting_loss_ratios == 'Written' && uw_acc == 'uw'
               ? 5 - (visibleColumns?.includes(3) ? 0 : 3)
               : 4 - (visibleColumns?.includes(3) ? 0 : 2)) +
           'px',
@@ -203,12 +213,12 @@ watch(
       :style="{
         left:
           112 * (leftColumnSize + idx_claims) -
-          dashboardStore.offMarginGWPGEP +
+          offMarginGWPGEP +
           (<any>Object)
             .values(margin)
             .slice(0, idx_claims)
             .reduce((ps: number, s: number) => ps + s, 0) *
-            (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw'
+            (underwriting_loss_ratios == 'Written' && uw_acc == 'uw'
               ? 5 - (visibleColumns?.includes(3) ? 0 : 3)
               : 4 - (visibleColumns?.includes(3) ? 0 : 2)) +
           'px',
@@ -238,12 +248,12 @@ watch(
       :style="{
         left:
           112 * (leftColumnSize + idx_claims) -
-          dashboardStore.offMarginGWPGEP +
+          offMarginGWPGEP +
           (<any>Object)
             .values(margin)
             .slice(0, idx_claims)
             .reduce((ps: number, s: number) => ps + s, 0) *
-            (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw'
+            (underwriting_loss_ratios == 'Written' && uw_acc == 'uw'
               ? 5 - (visibleColumns?.includes(3) ? 0 : 3)
               : 4 - (visibleColumns?.includes(3) ? 0 : 2)) +
           'px',
@@ -275,12 +285,12 @@ watch(
       :style="{
         left:
           112 * (leftColumnSize + idx_claims) -
-          dashboardStore.offMarginGWPGEP +
+          offMarginGWPGEP +
           (<any>Object)
             .values(margin)
             .slice(0, idx_claims)
             .reduce((ps: number, s: number) => ps + s, 0) *
-            (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw'
+            (underwriting_loss_ratios == 'Written' && uw_acc == 'uw'
               ? 5 - (visibleColumns?.includes(3) ? 0 : 3)
               : 4 - (visibleColumns?.includes(3) ? 0 : 2)) +
           'px',
@@ -298,8 +308,8 @@ watch(
     </td>
     <td
       v-if="
-        dashboardStore.underwriting_loss_ratios == 'Written' &&
-        dashboardStore.dashboards.uw_acc == 'uw' &&
+        underwriting_loss_ratios == 'Written' &&
+        uw_acc == 'uw' &&
         visibleColumns?.includes(3)
       "
       class="fixWidth text-red-500 bg-gray-50 absolute z-10"
@@ -309,12 +319,12 @@ watch(
       :style="{
         left:
           112 * (leftColumnSize + idx_claims) -
-          dashboardStore.offMarginGWPGEP +
+          offMarginGWPGEP +
           (<any>Object)
             .values(margin)
             .slice(0, idx_claims)
             .reduce((ps: number, s: number) => ps + s, 0) *
-            (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw'
+            (underwriting_loss_ratios == 'Written' && uw_acc == 'uw'
               ? 5 - (visibleColumns?.includes(3) ? 0 : 3)
               : 4 - (visibleColumns?.includes(3) ? 0 : 2)) +
           'px',
@@ -342,12 +352,12 @@ watch(
       :style="{
         left:
           112 * (leftColumnSize + idx_claims) -
-          dashboardStore.offMarginGWPGEP +
+          offMarginGWPGEP +
           (<any>Object)
             .values(margin)
             .slice(0, idx_claims)
             .reduce((ps: number, s: number) => ps + s, 0) *
-            (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw'
+            (underwriting_loss_ratios == 'Written' && uw_acc == 'uw'
               ? 5 - (visibleColumns?.includes(3) ? 0 : 3)
               : 4 - (visibleColumns?.includes(3) ? 0 : 2)) +
           'px',
@@ -355,7 +365,7 @@ watch(
         transform:
           'translateX(' +
           margin[item] *
-            (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw'
+            (underwriting_loss_ratios == 'Written' && uw_acc == 'uw'
               ? 5 - (visibleColumns?.includes(3) ? 0 : 3)
               : 4 - (visibleColumns?.includes(3) ? 0 : 2)) +
           'px)',
@@ -369,12 +379,12 @@ watch(
       "
     >
       {{
-        dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw'
+        underwriting_loss_ratios == 'Written' && uw_acc == 'uw'
           ? numberWithCommasOrRatios(
               claimsCalculation.ultimate(
                 rowIndex,
-                dashboardStore.dashboards.uw_acc,
-                dashboardStore.underwriting_loss_ratios,
+                uw_acc,
+                underwriting_loss_ratios,
                 item
               ),
               parseFloat(safeTypeNumber(dashboardData[rowIndex][dashboardDataColumn['uws.GWP_SUM']]).toFixed(0)),
@@ -383,8 +393,8 @@ watch(
           : numberWithCommasOrRatios(
               claimsCalculation.ultimate(
                 rowIndex,
-                dashboardStore.dashboards.uw_acc,
-                dashboardStore.underwriting_loss_ratios,
+                uw_acc,
+                underwriting_loss_ratios,
                 item
               ),
               safeTypeNumber(dashboardData[rowIndex][dashboardDataColumn['uw_data.GEP_AMOUNT']]),
@@ -400,9 +410,9 @@ watch(
     :style="{
       left:
         112 * (leftColumnSize + claimsType.length) -
-        dashboardStore.offMarginGWPGEP +
+        offMarginGWPGEP +
         (<any>Object).values(margin).reduce((ps: number, s: number) => ps + s, 0) *
-          (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw'
+          (underwriting_loss_ratios == 'Written' && uw_acc == 'uw'
             ? 5 - (visibleColumns?.includes(3) ? 0 : 3)
             : 4 - (visibleColumns?.includes(3) ? 0 : 2)) +
         'px',
@@ -425,9 +435,9 @@ watch(
     :style="{
       left:
         112 * (leftColumnSize + claimsType.length) -
-        dashboardStore.offMarginGWPGEP +
+        offMarginGWPGEP +
         (<any>Object).values(margin).reduce((ps: number, s: number) => ps + s, 0) *
-          (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw'
+          (underwriting_loss_ratios == 'Written' && uw_acc == 'uw'
             ? 5 - (visibleColumns?.includes(3) ? 0 : 3)
             : 4 - (visibleColumns?.includes(3) ? 0 : 2)) +
         'px',
@@ -450,9 +460,9 @@ watch(
     :style="{
       left:
         112 * (leftColumnSize + claimsType.length) -
-        dashboardStore.offMarginGWPGEP +
+        offMarginGWPGEP +
         (<any>Object).values(margin).reduce((ps: number, s: number) => ps + s, 0) *
-          (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw'
+          (underwriting_loss_ratios == 'Written' && uw_acc == 'uw'
             ? 5 - (visibleColumns?.includes(3) ? 0 : 3)
             : 4 - (visibleColumns?.includes(3) ? 0 : 2)) +
         'px',
@@ -476,9 +486,9 @@ watch(
     :style="{
       left:
         112 * (leftColumnSize + claimsType.length) -
-        dashboardStore.offMarginGWPGEP +
+        offMarginGWPGEP +
         (<any>Object).values(margin).reduce((ps: number, s: number) => ps + s, 0) *
-          (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw'
+          (underwriting_loss_ratios == 'Written' && uw_acc == 'uw'
             ? 5 - (visibleColumns?.includes(3) ? 0 : 3)
             : 4 - (visibleColumns?.includes(3) ? 0 : 2)) +
         'px',
@@ -496,8 +506,8 @@ watch(
   </td>
   <td
     v-if="
-      dashboardStore.underwriting_loss_ratios == 'Written' &&
-      dashboardStore.dashboards.uw_acc == 'uw' &&
+      underwriting_loss_ratios == 'Written' &&
+      uw_acc == 'uw' &&
       visibleColumns?.includes(3) &&
       !props.hideTotals
     "
@@ -506,9 +516,9 @@ watch(
     :style="{
       left:
         112 * (leftColumnSize + claimsType.length) -
-        dashboardStore.offMarginGWPGEP +
+        offMarginGWPGEP +
         (<any>Object).values(margin).reduce((ps: number, s: number) => ps + s, 0) *
-          (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw'
+          (underwriting_loss_ratios == 'Written' && uw_acc == 'uw'
             ? 5 - (visibleColumns?.includes(3) ? 0 : 3)
             : 4 - (visibleColumns?.includes(3) ? 0 : 2)) +
         'px',
@@ -536,9 +546,9 @@ watch(
     :style="{
       left:
         112 * (leftColumnSize + claimsType.length) -
-        dashboardStore.offMarginGWPGEP +
+        offMarginGWPGEP +
         (<any>Object).values(margin).reduce((ps: number, s: number) => ps + s, 0) *
-          (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw'
+          (underwriting_loss_ratios == 'Written' && uw_acc == 'uw'
             ? 5 - (visibleColumns?.includes(3) ? 0 : 3)
             : 4 - (visibleColumns?.includes(3) ? 0 : 2)) +
         'px',
@@ -546,19 +556,19 @@ watch(
       transform:
         'translateX(' +
         totalMargin *
-          (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw'
+          (underwriting_loss_ratios == 'Written' && uw_acc == 'uw'
             ? 5 - (visibleColumns?.includes(3) ? 0 : 3)
             : 4 - (visibleColumns?.includes(3) ? 0 : 2)) +
         'px)',
     }"
   >
     {{
-      dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw'
+      underwriting_loss_ratios == 'Written' && uw_acc == 'uw'
         ? numberWithCommasOrRatios(
             claimsCalculation.ultimateTotal(
               rowIndex,
-              dashboardStore.dashboards.uw_acc,
-              dashboardStore.underwriting_loss_ratios
+              uw_acc,
+              underwriting_loss_ratios
             ),
             safeTypeNumber(dashboardData[rowIndex][dashboardDataColumn['uws.GWP_SUM']]),
             ratioAmount == 'amount'
@@ -566,8 +576,8 @@ watch(
         : numberWithCommasOrRatios(
             claimsCalculation.ultimateTotal(
               rowIndex,
-              dashboardStore.dashboards.uw_acc,
-              dashboardStore.underwriting_loss_ratios
+              uw_acc,
+              underwriting_loss_ratios
             ),
             safeTypeNumber(dashboardData[rowIndex][dashboardDataColumn['uw_data.GEP_AMOUNT']]),
             ratioAmount == 'amount'
@@ -582,13 +592,13 @@ watch(
     :style="{
       left:
         112 * (leftColumnSize + 1 + claimsType.length) -
-        dashboardStore.offMarginGWPGEP +
+        offMarginGWPGEP +
         (<any>Object).values(margin).reduce((ps: number, s: number) => ps + s, 0) *
-          (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw'
+          (underwriting_loss_ratios == 'Written' && uw_acc == 'uw'
             ? 5 - (visibleColumns?.includes(3) ? 0 : 3)
             : 4 - (visibleColumns?.includes(3) ? 0 : 2)) +
         totalMargin *
-          (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw'
+          (underwriting_loss_ratios == 'Written' && uw_acc == 'uw'
             ? 5 - (visibleColumns?.includes(3) ? 0 : 3)
             : 4 - (visibleColumns?.includes(3) ? 0 : 2)) +
         'px',
@@ -611,13 +621,13 @@ watch(
     :style="{
       left:
         112 * (leftColumnSize + 2 + claimsType.length) -
-        dashboardStore.offMarginAprioriCCR +
+        offMarginAprioriCCR +
         (<any>Object).values(margin).reduce((ps: number, s: number) => ps + s, 0) *
-          (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw'
+          (underwriting_loss_ratios == 'Written' && uw_acc == 'uw'
             ? 5 - (visibleColumns?.includes(3) ? 0 : 3)
             : 4 - (visibleColumns?.includes(3) ? 0 : 2)) +
         totalMargin *
-          (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw'
+          (underwriting_loss_ratios == 'Written' && uw_acc == 'uw'
             ? 5 - (visibleColumns?.includes(3) ? 0 : 3)
             : 4 - (visibleColumns?.includes(3) ? 0 : 2)) +
         'px',
@@ -628,9 +638,9 @@ watch(
       decimalToPercentage(
         claimsCalculation.ccrNlr(
           rowIndex,
-          dashboardStore.dashboards.uw_acc,
-          dashboardStore.underwriting_loss_ratios,
-          dashboardStore.dashboards.ccr_nlr
+          uw_acc,
+          underwriting_loss_ratios,
+          ccr_nlr
         ),
         false
       )
@@ -643,13 +653,13 @@ watch(
     :style="{
       left:
         112 * (leftColumnSize + 3 + claimsType.length) -
-        dashboardStore.offMarginAprioriCCR +
+        offMarginAprioriCCR +
         (<any>Object).values(margin).reduce((ps: number, s: number) => ps + s, 0) *
-          (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw'
+          (underwriting_loss_ratios == 'Written' && uw_acc == 'uw'
             ? 5 - (visibleColumns?.includes(3) ? 0 : 3)
             : 4 - (visibleColumns?.includes(3) ? 0 : 2)) +
         totalMargin *
-          (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw'
+          (underwriting_loss_ratios == 'Written' && uw_acc == 'uw'
             ? 5 - (visibleColumns?.includes(3) ? 0 : 3)
             : 4 - (visibleColumns?.includes(3) ? 0 : 2)) +
         'px',
@@ -660,11 +670,11 @@ watch(
       decimalToPercentage(
         claimsCalculation.normalisedCCRNLR(
           rowIndex,
-          dashboardStore.dashboards.uw_acc,
-          dashboardStore.underwriting_loss_ratios,
+          uw_acc,
+          underwriting_loss_ratios,
           dashboardStore.normalise,
-          dashboardStore.dashboards.ccr_nlr,
-          dashboardStore.dashboards.seasonFactor
+          ccr_nlr,
+          seasonFactor
         ),
         false
       )
@@ -678,13 +688,13 @@ watch(
     :style="{
       left:
         112 * (leftColumnSize + 4 + claimsType.length) -
-        dashboardStore.offMarginAprioriCCR +
+        offMarginAprioriCCR +
         (<any>Object).values(margin).reduce((ps: number, s: number) => ps + s, 0) *
-          (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw'
+          (underwriting_loss_ratios == 'Written' && uw_acc == 'uw'
             ? 5 - (visibleColumns?.includes(3) ? 0 : 3)
             : 4 - (visibleColumns?.includes(3) ? 0 : 2)) +
         totalMargin *
-          (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw'
+          (underwriting_loss_ratios == 'Written' && uw_acc == 'uw'
             ? 5 - (visibleColumns?.includes(3) ? 0 : 3)
             : 4 - (visibleColumns?.includes(3) ? 0 : 2)) +
         'px',
@@ -695,10 +705,10 @@ watch(
       decimalToPercentage(
         claimsCalculation.seasAdjustedCCRNLR(
           rowIndex,
-          dashboardStore.dashboards.uw_acc,
-          dashboardStore.underwriting_loss_ratios,
-          dashboardStore.dashboards.seasonFactor,
-          dashboardStore.dashboards.ccr_nlr
+          uw_acc,
+          underwriting_loss_ratios,
+          seasonFactor,
+          ccr_nlr
         ),
         false
       )
@@ -714,13 +724,13 @@ watch(
         :style="{
           left:
             112 * (leftColumnSize + 4 + idx_claims * 2 + 1 + claimsType.length) -
-            dashboardStore.offMarginAprioriCCR +
+            offMarginAprioriCCR +
             (<any>Object).values(margin).reduce((ps: number, s: number) => ps + s, 0) *
-              (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw'
+              (underwriting_loss_ratios == 'Written' && uw_acc == 'uw'
                 ? 5 - (visibleColumns?.includes(3) ? 0 : 3)
                 : 4 - (visibleColumns?.includes(3) ? 0 : 2)) +
             totalMargin *
-              (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw'
+              (underwriting_loss_ratios == 'Written' && uw_acc == 'uw'
                 ? 5 - (visibleColumns?.includes(3) ? 0 : 3)
                 : 4 - (visibleColumns?.includes(3) ? 0 : 2)) +
             'px',
@@ -731,9 +741,9 @@ watch(
           numberWithCommasOrRatios(
             claimsCalculation.seasAdjApriori(
               rowIndex,
-              dashboardStore.dashboards.uw_acc,
-              dashboardStore.underwriting_loss_ratios,
-              dashboardStore.dashboards.seasonFactor,
+              uw_acc,
+              underwriting_loss_ratios,
+              seasonFactor,
               i
             ),
             safeTypeNumber(dashboardData[rowIndex][dashboardDataColumn['uw_data.GEP_AMOUNT']]),
@@ -749,13 +759,13 @@ watch(
         :style="{
           left:
             112 * (leftColumnSize + 4 + idx_claims * 2 + 2 + claimsType.length) -
-            dashboardStore.offMarginAprioriCCR +
+            offMarginAprioriCCR +
             (<any>Object).values(margin).reduce((ps: number, s: number) => ps + s, 0) *
-              (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw'
+              (underwriting_loss_ratios == 'Written' && uw_acc == 'uw'
                 ? 5 - (visibleColumns?.includes(3) ? 0 : 3)
                 : 4 - (visibleColumns?.includes(3) ? 0 : 2)) +
             totalMargin *
-              (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw'
+              (underwriting_loss_ratios == 'Written' && uw_acc == 'uw'
                 ? 5 - (visibleColumns?.includes(3) ? 0 : 3)
                 : 4 - (visibleColumns?.includes(3) ? 0 : 2)) +
             'px',
@@ -766,7 +776,7 @@ watch(
           v-if="
             maxSeasonality[idx_claims] != 0 &&
             dashboardData[rowIndex][dashboardDataColumn['uw_data.' + i + '_seasonality']] != 1 &&
-            !(dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw')
+            !(underwriting_loss_ratios == 'Written' && uw_acc == 'uw')
           "
           class="bg-red-300 h-1 absolute bottom-4"
           :style="{
@@ -792,7 +802,7 @@ watch(
         <p class="item">
           {{
             claimsCalculation
-              .seasonality(rowIndex, dashboardStore.dashboards.uw_acc, dashboardStore.underwriting_loss_ratios, i)
+              .seasonality(rowIndex, uw_acc, underwriting_loss_ratios, i)
               .toFixed(2)
           }}
         </p>

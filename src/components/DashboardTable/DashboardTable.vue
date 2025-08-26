@@ -23,10 +23,11 @@ onMounted(() => {
 });
 
 
-const props = defineProps<{
+const props = defineProps<{ 
   overflow: string;
   containerWidth?: number;
   containerHeight?: number;
+  snapshot?: any;
   attritionalOnly?: boolean;
   largeOnly?: boolean;
   weatherOnly?: boolean;
@@ -37,18 +38,20 @@ const props = defineProps<{
   maxRows?: number;
 }>();
 
-const mqy = computed(() => dashboardStore.dashboards.mqy);
+const mqy = computed(() => {
+  return props.snapshot?.mqy || dashboardStore.dashboards.mqy;
+});
 
-const binderDashboardData = computed(() => dashboardStore.binder_dashboard_data);
-const quarterDashboardData = computed(() => dashboardStore.quarterly_dashboard_data);
-const yearDashboardData = computed(() => dashboardStore.yearly_dashboard_data);
+const binderDashboardData = computed(() => props.snapshot?.binder_dashboard_data ?? dashboardStore.binder_dashboard_data);
+const quarterDashboardData = computed(() => props.snapshot?.quarterly_dashboard_data ?? dashboardStore.quarterly_dashboard_data);
+const yearDashboardData = computed(() => props.snapshot?.yearly_dashboard_data ?? dashboardStore.yearly_dashboard_data);
 
-const isYearSubTotal = computed(() => dashboardStore.isYearSubTotal);
-const isYearSubTotalUp = computed(() => dashboardStore.isYearSubTotalUp);
-const isQuarterSubTotal = computed(() => dashboardStore.isQuarterSubTotal);
-const isQuarterSubTotalUp = computed(() => dashboardStore.isQuarterSubTotalUp);
-const isBinderSubTotal = computed(() => dashboardStore.isBinderSubTotal);
-const isBinderSubTotalUp = computed(() => dashboardStore.isBinderSubTotalUp);
+const isYearSubTotal = computed(() => props.snapshot?.isYearSubTotal ?? dashboardStore.isYearSubTotal);
+const isYearSubTotalUp = computed(() => props.snapshot?.isYearSubTotalUp ?? dashboardStore.isYearSubTotalUp);
+const isQuarterSubTotal = computed(() => props.snapshot?.isQuarterSubTotal ?? dashboardStore.isQuarterSubTotal);
+const isQuarterSubTotalUp = computed(() => props.snapshot?.isQuarterSubTotalUp ?? dashboardStore.isQuarterSubTotalUp);
+const isBinderSubTotal = computed(() => props.snapshot?.isBinderSubTotal ?? dashboardStore.isBinderSubTotal);
+const isBinderSubTotalUp = computed(() => props.snapshot?.isBinderSubTotalUp ?? dashboardStore.isBinderSubTotalUp);
 const claimsType = computed<string[]>(() => portfolioStore.parameters.claims_nature);
 const attritionalKey = computed(() => {
   const list = (portfolioStore.parameters?.claims_nature as string[]) || [];
@@ -67,7 +70,7 @@ const weatherKey = computed(() => {
   const match = list.find((x) => String(x).toUpperCase() === 'WEATHER');
   return match || 'WEATHER';
 });
-const showColumnTotal = computed(() => dashboardStore.showColumnTotal);
+const showColumnTotal = computed(() => props.snapshot?.showColumnTotal ?? dashboardStore.showColumnTotal);
 
 const filteredShowColumnTotal = computed(() => {
   if (props.totalUltimateOnly) {
@@ -76,9 +79,9 @@ const filteredShowColumnTotal = computed(() => {
   if (props.lossRatiosOnly) {
     return true; // Force show total columns
   }
-  return dashboardStore.showColumnTotal;
+  return (props.snapshot?.showColumnTotal ?? dashboardStore.showColumnTotal);
 });
-const totalMargin = computed(() => dashboardStore.totalMargin);
+const totalMargin = computed(() => props.snapshot?.totalMargin ?? dashboardStore.totalMargin);
 
 const filteredTotalMargin = computed(() => {
   if (props.totalUltimateOnly) {
@@ -87,10 +90,10 @@ const filteredTotalMargin = computed(() => {
   if (props.lossRatiosOnly) {
     return 0; // Keep total columns collapsed
   }
-  return dashboardStore.totalMargin;
+  return (props.snapshot?.totalMargin ?? dashboardStore.totalMargin);
 });
-const showColumn = computed(() => dashboardStore.showColumn);
-const margin = computed(() => dashboardStore.margin);
+const showColumn = computed(() => props.snapshot?.showColumn ?? dashboardStore.showColumn);
+const margin = computed(() => props.snapshot?.margin ?? dashboardStore.margin);
 
 // Force expansion for specific claims type when in single-claims mode
 const filteredMargin = computed(() => {
@@ -146,7 +149,7 @@ const filteredMargin = computed(() => {
     });
     return result;
   }
-  return dashboardStore.margin;
+  return (props.snapshot?.margin ?? dashboardStore.margin);
 });
 
 const leftColumnSize = computed(
@@ -250,7 +253,7 @@ const filteredShowColumn = computed(() => {
     });
     return filtered;
   }
-  return dashboardStore.showColumn;
+  return (props.snapshot?.showColumn ?? dashboardStore.showColumn);
 });
 
 const filteredClaimsType = computed(() => {
@@ -292,7 +295,7 @@ const filteredVisibleColumns = computed(() => {
   if (props.attritionalLargeExpanded) {
     return [1, 2, 3]; // Show GWP, GEP, and CCR (for loss ratio columns)
   }
-  return dashboardStore.visibleColumns;
+  return (props.snapshot?.visibleColumns ?? dashboardStore.visibleColumns);
 });
 
 // Filter main columns for single-claims mode (hide GWP, GEP, Commission, CCR, Seasonality)
@@ -312,7 +315,7 @@ const filteredMainColumns = computed(() => {
   if (props.attritionalLargeExpanded) {
     return [1, 2]; // Show GWP and GEP, hide Commission, CCR, Seasonality
   }
-  return dashboardStore.visibleColumns;
+  return (props.snapshot?.visibleColumns ?? dashboardStore.visibleColumns);
 });
 
 const hideTotals = computed(() => !!(props.attritionalOnly || props.largeOnly || props.weatherOnly || props.largeLossLoad));
@@ -341,7 +344,7 @@ function updateNaturalSize() {
       const periodColumnWidth = 112;
       const columnWidth = 112; 
       const baseColumns = 5; // Paid, O/S, Incurred, IBNR, Ultimate
-      const hasUnearned = dashboardStore.underwriting_loss_ratios === 'Written' && dashboardStore.dashboards.uw_acc === 'uw';
+      const hasUnearned = (props.snapshot?.underwriting_loss_ratios || dashboardStore.underwriting_loss_ratios) === 'Written' && (props.snapshot?.uw_acc || dashboardStore.dashboards.uw_acc) === 'uw';
       const totalColumns = baseColumns + (hasUnearned ? 1 : 0);
       const calculatedWidth = periodColumnWidth + (totalColumns * columnWidth);
       
@@ -353,7 +356,7 @@ function updateNaturalSize() {
       const claimsTypeCount = (portfolioStore.parameters?.claims_nature as string[])?.length || 2;
       const baseClaimsColumns = 1; // Each claims type shows 1 column (collapsed)
       const totalUltimateColumns = 6; // Paid, O/S, Incurred, IBNR, Unearned (if Written), Ultimate
-      const hasUnearned = dashboardStore.underwriting_loss_ratios === 'Written' && dashboardStore.dashboards.uw_acc === 'uw';
+      const hasUnearned = (props.snapshot?.underwriting_loss_ratios || dashboardStore.underwriting_loss_ratios) === 'Written' && (props.snapshot?.uw_acc || dashboardStore.dashboards.uw_acc) === 'uw';
       const ultimateColumns = hasUnearned ? totalUltimateColumns : totalUltimateColumns - 1;
       
       const calculatedWidth = periodColumnWidth + 
@@ -481,7 +484,7 @@ const scaledFontSize = computed(() => 12);
 const scaledPadding = computed(() => 6);
 const totalMarginCCR = ref(0);
 const dashboardData = computed<DashboardData>(() => {
-  return dashboardStore.dashboard_data;
+  return (props.snapshot?.dashboard_data ?? dashboardStore.dashboard_data);
 });
 
 const visibleRowIndices = computed(() => {
@@ -621,6 +624,7 @@ function toggleIsExposure() {
         <thead :class="['header-teal', isScaledDown ? '' : 'sticky top-0 z-30']">
           <tr>
             <DashboardHeader
+              :snapshot="props.snapshot"
               :total-margin-ccr="totalMarginCCR"
               :total-margin="filteredTotalMargin"
               :margin="filteredMargin"
@@ -635,6 +639,7 @@ function toggleIsExposure() {
           </tr>
           <tr>
             <UltimatesHeader
+              :snapshot="props.snapshot"
               :margin="filteredMargin"
               :total-margin="filteredTotalMargin"
               :show-column-total="filteredShowColumnTotal"
@@ -654,6 +659,7 @@ function toggleIsExposure() {
           <template v-for="idx in visibleRowIndices" :key="idx">
             <tr>
               <ValueRow
+                :snapshot="props.snapshot"
                 :row-index="parseInt(idx.toString())"
                 :margin="filteredMargin"
                 :show-column="filteredShowColumn"
@@ -678,10 +684,11 @@ function toggleIsExposure() {
                 isBinderSubTotal &&
                 isBinderSubTotalUp &&
                 mqy == 'month' &&
-                dashboardStore.dashboards.uw_acc == 'uw'
+                (props.snapshot?.uw_acc || dashboardStore.dashboards.uw_acc) == 'uw'
               "
             >
               <ValueRow
+                :snapshot="props.snapshot"
                 :row-index="parseInt(idx.toString())"
                 :margin="filteredMargin"
                 :show-column="filteredShowColumn"
@@ -702,6 +709,7 @@ function toggleIsExposure() {
             </tr>
             <tr v-if="quarterDashboardData[idx] && isQuarterSubTotal && isQuarterSubTotalUp && mqy == 'month'">
               <ValueRow
+                :snapshot="props.snapshot"
                 :row-index="parseInt(idx.toString())"
                 :margin="filteredMargin"
                 :show-column="filteredShowColumn"
@@ -722,6 +730,7 @@ function toggleIsExposure() {
             </tr>
             <tr v-if="yearDashboardData[idx] && isYearSubTotal && isYearSubTotalUp && mqy != 'year'">
               <ValueRow
+                :snapshot="props.snapshot"
                 :row-index="parseInt(idx.toString())"
                 :margin="filteredMargin"
                 :show-column="filteredShowColumn"
@@ -764,7 +773,7 @@ function toggleIsExposure() {
             </tr>
           </template>
           <template
-            v-if="isBinderSubTotal && !isBinderSubTotalUp && mqy == 'month' && dashboardStore.dashboards.uw_acc == 'uw'"
+            v-if="isBinderSubTotal && !isBinderSubTotalUp && mqy == 'month' && (props.snapshot?.uw_acc || dashboardStore.dashboards.uw_acc) == 'uw'"
           >
             <tr v-for="(n, idx) in binderDashboardData" :key="idx">
               <ValueRow
@@ -811,6 +820,7 @@ function toggleIsExposure() {
           </template>
           <tr :class="['bg-gray-300', 'total-row', isScaledDown ? '' : 'sticky z-30 bottom-0']">
             <ValueRow
+              :snapshot="props.snapshot"
               :row-index="0"
               :margin="filteredMargin"
               :show-column="filteredShowColumn"

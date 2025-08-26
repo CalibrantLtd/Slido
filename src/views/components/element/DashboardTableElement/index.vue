@@ -41,6 +41,7 @@
           overflow="auto"
           :container-width="elementInfo.width"
           :container-height="elementInfo.height"
+          :snapshot="(elementInfo as any)._snapshot"
           :attritional-only="elementInfo.attritionalOnly"
           :large-only="elementInfo.largeOnly"
           :weather-only="elementInfo.weatherOnly"
@@ -89,6 +90,8 @@ const props = defineProps<{
     lossRatiosOnly?: boolean
     attritionalLargeExpanded?: boolean
     largeLossLoad?: boolean
+    maxRows?: number
+    _snapshot?: any
   }
   selectElement: (e: MouseEvent | TouchEvent, element: PPTElement, canMove?: boolean) => void
   contextmenus: () => ContextmenuItem[] | null
@@ -99,6 +102,8 @@ const dashboardStore = useDashboardStore()
 
 // Load portfolio data if element has portfolio/bounce info
 onMounted(async () => {
+  if ((props.elementInfo as any)._snapshot) return
+  
   if (props.elementInfo.portfolioId && props.elementInfo.bounceId && !props.elementInfo.isTemplatePlaceholder) {
     try {      
       // Fetch complete portfolio data

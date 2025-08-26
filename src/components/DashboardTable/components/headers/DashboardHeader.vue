@@ -11,13 +11,19 @@ const dashboardStore = useDashboardStore();
 const portfolioStore = usePortfolioStore();
 
 // computed values from stores
-const isBindedYears = computed<boolean>(() => dashboardStore.isBindedYears);
-const ratioAmount = computed(() => dashboardStore.dashboards.ratio_amount);
+const isBindedYears = computed<boolean>(() => props.snapshot?.isBindedYears ?? dashboardStore.isBindedYears);
+const ratioAmount = computed(() => props.snapshot?.ratio_amount ?? dashboardStore.dashboards.ratio_amount);
 const claimsType = computed<string[]>(() => props.claimsType || portfolioStore.parameters.claims_nature);
 const normaliseSelection = computed<boolean[]>(() => portfolioStore.normaliseSelection);
-const seasonFactor = computed<boolean>(() => dashboardStore.dashboards.seasonFactor);
+const seasonFactor = computed<boolean>(() => props.snapshot?.seasonFactor ?? dashboardStore.dashboards.seasonFactor);
 const normalise = computed<boolean[]>(() => portfolioStore.normalise);
-const ccrnlr = computed<string>(() => dashboardStore.dashboards.ccr_nlr);
+const ccrnlr = computed<string>(() => props.snapshot?.ccr_nlr ?? dashboardStore.dashboards.ccr_nlr);
+const gwpnwp = computed(() => {
+  return props.snapshot?.gwpnwp ?? dashboardStore.dashboards.gwpnwp;
+});
+const uw_acc = computed(() => props.snapshot?.uw_acc ?? dashboardStore.dashboards.uw_acc);
+const mqy = computed(() => props.snapshot?.mqy ?? dashboardStore.dashboards.mqy);
+const underwriting_loss_ratios = computed(() => props.snapshot?.underwriting_loss_ratios ?? dashboardStore.underwriting_loss_ratios);
 const props = defineProps<{
   totalMarginCcr: number;
   margin: NumericDictionary;
@@ -28,9 +34,10 @@ const props = defineProps<{
   claimsType?: string[];
   totalUltimateOnly?: boolean;
   lossRatiosOnly?: boolean;
+  snapshot?: any;
 }>();
 
-const visibleColumns = computed(() => props.visibleColumns || dashboardStore.visibleColumns);
+const visibleColumns = computed(() => props.visibleColumns || props.snapshot?.visibleColumns || dashboardStore.visibleColumns);
 
 function capitalizeFirstLetter(val: any) {
   return String(val).charAt(0).toUpperCase() + String(val).slice(1);
@@ -95,8 +102,8 @@ const rightClickMenu = ref<{ showMenu: (event: MouseEvent) => void } | null>(nul
 function setDefaultPeriod() {
   if (portfolioStore.parameters['default_dashboard']) {
     const oldParameters = structuredClone(portfolioStore.parameters);
-    portfolioStore.parameters['default_dashboard'].accident_underwriting = dashboardStore.dashboards.uw_acc;
-    portfolioStore.parameters['default_dashboard'].cohort = dashboardStore.dashboards.mqy;
+    portfolioStore.parameters['default_dashboard'].accident_underwriting = uw_acc.value;
+    portfolioStore.parameters['default_dashboard'].cohort = mqy.value;
 
     portfolioStore.saveParameters(oldParameters, 'Saved Parameters');
   }
@@ -112,10 +119,10 @@ defineEmits(['onChangeCcrMargin']);
     @contextmenu.prevent.stop="handleRightClick($event)"
   >
     <p class="cursor-pointer item" data-testid="uw-acc-bespoke" @click="changeCurrData()">
-      {{ { uw: isBindedYears ? 'Bespoke' : 'Underwriting', acc: 'Accident' }[dashboardStore.dashboards.uw_acc] }}
+      {{ { uw: isBindedYears ? 'Bespoke' : 'Underwriting', acc: 'Accident' }[uw_acc] }}
     </p>
     <p class="cursor-pointer item" data-testid="dashboard-mqy" @click="changeCurrentDispDate()">
-      {{ toTitleCase(dashboardStore.dashboards.mqy) }}
+      {{ toTitleCase(mqy) }}
     </p>
     <div v-if="periodRightClick" class="absolute -right-10 py-2 bg-gray-200 shadow-md rounded-sm">
       <span
@@ -127,23 +134,23 @@ defineEmits(['onChangeCcrMargin']);
   </th>
   <th v-if="visibleColumns?.includes(1)" class="fixWidth fixHeight header-teal text-sybil-teal" rowspan="2">
     <div class="cursor-pointer" data-testid="gwp-nwp-col" @click="changegwpnwp()">
-      {{ dashboardStore.dashboards.gwpnwp }}
+            {{ gwpnwp }}
     </div>
-    <span v-if="dashboardStore.dashboards.uw_acc == 'acc'" class="italc text-xs"
-      >(underwriting {{ dashboardStore.dashboards.mqy }})</span
+    <span v-if="uw_acc == 'acc'" class="italc text-xs"
+      >(underwriting {{ mqy }})</span
     >
   </th>
   <template v-if="portfolioStore.getExposureLength() > 0 && dashboardStore.isShowingExposure && !props.totalUltimateOnly">
     <th class="fixWidth fixHeight header-teal text-sybil-teal" rowspan="2">
       Total Risk Count
-      <span v-if="dashboardStore.dashboards.uw_acc == 'acc'" class="italc text-xs"
-        >(underwriting {{ dashboardStore.dashboards.mqy }})</span
+      <span v-if="uw_acc == 'acc'" class="italc text-xs"
+        >(underwriting {{ mqy }})</span
       >
     </th>
     <th class="fixWidth fixHeight header-teal text-sybil-teal" rowspan="2">
       Average GWP
-      <span v-if="dashboardStore.dashboards.uw_acc == 'acc'" class="italc text-xs"
-        >(underwriting {{ dashboardStore.dashboards.mqy }})</span
+      <span v-if="uw_acc == 'acc'" class="italc text-xs"
+        >(underwriting {{ mqy }})</span
       >
     </th>
     <th
@@ -153,14 +160,14 @@ defineEmits(['onChangeCcrMargin']);
       rowspan="2"
     >
       {{ capitalizeFirstLetter(i['method'] == 'sum' ? 'Total' : i['method']) }} {{ removeBandFromName(i['name']) }}
-      <span v-if="dashboardStore.dashboards.uw_acc == 'acc'" class="italc text-xs"
-        >(underwriting {{ dashboardStore.dashboards.mqy }})</span
+      <span v-if="uw_acc == 'acc'" class="italc text-xs"
+        >(underwriting {{ mqy }})</span
       >
     </th>
   </template>
   <th v-if="visibleColumns?.includes(2)" class="fixWidth fixHeight header-teal text-sybil-teal" rowspan="2">
     <div class="cursor-pointer" data-testid="gep-nep-col" @click="changegwpnwp()">
-      {{ dashboardStore.dashboards.gwpnwp.replace('W', 'E') }}
+      {{ gwpnwp?.replace('W', 'E') || gwpnwp }}
     </div>
   </th>
   <th
@@ -169,7 +176,7 @@ defineEmits(['onChangeCcrMargin']);
       props.hideTotals 
         ? (
           // For attritional-only: calculate based on actual visible columns
-          dashboardStore.underwriting_loss_ratios === 'Written' && dashboardStore.dashboards.uw_acc === 'uw'
+          underwriting_loss_ratios === 'Written' && uw_acc === 'uw'
             ? 6  // Written mode: Paid, O/S, Incurred, IBNR, Unearned, Ultimate
             : 5  // Earned mode: Paid, O/S, Incurred, IBNR, Ultimate
         )
@@ -177,7 +184,7 @@ defineEmits(['onChangeCcrMargin']);
         ? (
           // For total-ultimate-only: calculate based on all visible columns
           claimsType.length + // Claims type columns (collapsed)
-          (dashboardStore.underwriting_loss_ratios === 'Written' && dashboardStore.dashboards.uw_acc === 'uw'
+          (underwriting_loss_ratios === 'Written' && uw_acc === 'uw'
             ? 6  // Total Ultimate columns: Paid, O/S, Incurred, IBNR, Unearned, Ultimate
             : 5) // Total Ultimate columns: Paid, O/S, Incurred, IBNR, Ultimate
         )
@@ -195,7 +202,7 @@ defineEmits(['onChangeCcrMargin']);
       width: props.hideTotals 
         ? (
           // For attritional-only: calculate width based on actual visible columns
-          dashboardStore.underwriting_loss_ratios === 'Written' && dashboardStore.dashboards.uw_acc === 'uw'
+          underwriting_loss_ratios === 'Written' && uw_acc === 'uw'
             ? 6 * 112 + 'px'  // Written mode: 6 columns * 112px
             : 5 * 112 + 'px'  // Earned mode: 5 columns * 112px
         )
@@ -203,7 +210,7 @@ defineEmits(['onChangeCcrMargin']);
         ? (
           // For total-ultimate-only: calculate width based on all visible columns
           (claimsType.length * 112) + // Claims type columns (collapsed)
-          (dashboardStore.underwriting_loss_ratios === 'Written' && dashboardStore.dashboards.uw_acc === 'uw'
+          (underwriting_loss_ratios === 'Written' && uw_acc === 'uw'
             ? 6 * 112  // Total Ultimate columns: Paid, O/S, Incurred, IBNR, Unearned, Ultimate
             : 5 * 112) + 'px' // Total Ultimate columns: Paid, O/S, Incurred, IBNR, Ultimate
         )
@@ -216,18 +223,18 @@ defineEmits(['onChangeCcrMargin']);
           112 * (claimsType.length + 1) -
           dashboardStore.offMarginGWPGEP +
           (<any>Object).values(margin).reduce((ps: number, s: number) => ps + s, 0) *
-            (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw'
+            (underwriting_loss_ratios == 'Written' && uw_acc == 'uw'
               ? 5 - (visibleColumns?.includes(3) ? 0 : 3)
               : 4 - (visibleColumns?.includes(3) ? 0 : 2)) +
           totalMargin *
-            (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw'
+            (underwriting_loss_ratios == 'Written' && uw_acc == 'uw'
               ? 5 - (visibleColumns?.includes(3) ? 0 : 3)
               : 4 - (visibleColumns?.includes(3) ? 0 : 2)) +
           'px'
         ),
       'min-width': props.hideTotals 
         ? (
-          dashboardStore.underwriting_loss_ratios === 'Written' && dashboardStore.dashboards.uw_acc === 'uw'
+          underwriting_loss_ratios === 'Written' && uw_acc === 'uw'
             ? 6 * 112 + 'px'
             : 5 * 112 + 'px'
         )
@@ -235,7 +242,7 @@ defineEmits(['onChangeCcrMargin']);
         ? (
           // For total-ultimate-only: calculate min-width based on all visible columns
           (claimsType.length * 112) + // Claims type columns (collapsed)
-          (dashboardStore.underwriting_loss_ratios === 'Written' && dashboardStore.dashboards.uw_acc === 'uw'
+          (underwriting_loss_ratios === 'Written' && uw_acc === 'uw'
             ? 6 * 112  // Total Ultimate columns: Paid, O/S, Incurred, IBNR, Unearned, Ultimate
             : 5 * 112) + 'px' // Total Ultimate columns: Paid, O/S, Incurred, IBNR, Ultimate
         )
@@ -247,18 +254,18 @@ defineEmits(['onChangeCcrMargin']);
         : (
           112 * (claimsType.length + 1) +
           (<any>Object).values(margin).reduce((ps: number, s: number) => ps + s, 0) *
-            (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw'
+            (underwriting_loss_ratios == 'Written' && uw_acc == 'uw'
               ? 5 - (visibleColumns?.includes(3) ? 0 : 3)
               : 4 - (visibleColumns?.includes(3) ? 0 : 2)) +
           totalMargin *
-            (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw'
+            (underwriting_loss_ratios == 'Written' && uw_acc == 'uw'
               ? 5 - (visibleColumns?.includes(3) ? 0 : 3)
               : 4 - (visibleColumns?.includes(3) ? 0 : 2)) +
           'px'
         ),
       'max-width': props.hideTotals 
         ? (
-          dashboardStore.underwriting_loss_ratios === 'Written' && dashboardStore.dashboards.uw_acc === 'uw'
+          underwriting_loss_ratios === 'Written' && uw_acc === 'uw'
             ? 6 * 112 + 'px'
             : 5 * 112 + 'px'
         )
@@ -266,7 +273,7 @@ defineEmits(['onChangeCcrMargin']);
         ? (
           // For total-ultimate-only: calculate max-width based on all visible columns
           (claimsType.length * 112) + // Claims type columns (collapsed)
-          (dashboardStore.underwriting_loss_ratios === 'Written' && dashboardStore.dashboards.uw_acc === 'uw'
+          (underwriting_loss_ratios === 'Written' && uw_acc === 'uw'
             ? 6 * 112  // Total Ultimate columns: Paid, O/S, Incurred, IBNR, Unearned, Ultimate
             : 5 * 112) + 'px' // Total Ultimate columns: Paid, O/S, Incurred, IBNR, Ultimate
         )
@@ -278,11 +285,11 @@ defineEmits(['onChangeCcrMargin']);
         : (
           112 * (claimsType.length + 1) +
           (<any>Object).values(margin).reduce((ps: number, s: number) => ps + s, 0) *
-            (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw'
+            (underwriting_loss_ratios == 'Written' && uw_acc == 'uw'
               ? 5 - (visibleColumns?.includes(3) ? 0 : 3)
               : 4 - (visibleColumns?.includes(3) ? 0 : 2)) +
           totalMargin *
-            (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw'
+            (underwriting_loss_ratios == 'Written' && uw_acc == 'uw'
               ? 5 - (visibleColumns?.includes(3) ? 0 : 3)
               : 4 - (visibleColumns?.includes(3) ? 0 : 2)) +
           'px'
@@ -291,14 +298,14 @@ defineEmits(['onChangeCcrMargin']);
       transition: '0.5s ease-out',
     }"
   >
-    <p v-if="dashboardStore.dashboards.uw_acc == 'acc'" style="display: inline">Earned</p>
+    <p v-if="uw_acc == 'acc'" style="display: inline">Earned</p>
     <p
-      v-if="dashboardStore.dashboards.uw_acc == 'uw'"
+      v-if="uw_acc == 'uw'"
       style="display: inline"
       class="cursor-pointer lossRatioItem"
       @click="dashboardStore.underwritingLossRatiosChange()"
     >
-      {{ dashboardStore.underwriting_loss_ratios + ' ' }}
+      {{ underwriting_loss_ratios + ' ' }}
     </p>
     Loss
     <p
@@ -314,9 +321,9 @@ defineEmits(['onChangeCcrMargin']);
   <th v-if="visibleColumns?.includes(4)" class="fixWidth header-teal z-20 text-teal-400" rowspan="2">Comm.</th>
   <th v-if="visibleColumns?.includes(3) && !props.hideTotals" class="fixWidth header-teal z-20" rowspan="2">
     <div class="cursor-pointer" @click="changeccrnlr()">
-      <p v-if="dashboardStore.dashboards.uw_acc == 'acc'">Earned</p>
+      <p v-if="uw_acc == 'acc'">Earned</p>
       <p v-else>
-        {{ dashboardStore.underwriting_loss_ratios }}
+        {{ underwriting_loss_ratios }}
       </p>
       {{ ccrnlr }}
     </div>
@@ -348,9 +355,9 @@ defineEmits(['onChangeCcrMargin']);
         </div>
       </div>
       <br />Normalised <br />
-      <p v-if="dashboardStore.dashboards.uw_acc == 'acc'">Earned</p>
+      <p v-if="uw_acc == 'acc'">Earned</p>
       <p v-else>
-        {{ dashboardStore.underwriting_loss_ratios }}
+        {{ underwriting_loss_ratios }}
       </p>
 
       <div class="cursor-pointer" @click="changeccrnlr()">

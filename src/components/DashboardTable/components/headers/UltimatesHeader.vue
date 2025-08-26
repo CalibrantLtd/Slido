@@ -20,9 +20,12 @@ const props = defineProps<{
   claimsType?: string[];
   visibleColumns?: number[];
   hideTotals?: boolean;
+  snapshot?: any;
 }>();
 
-const visibleColumns = computed(() => props.visibleColumns || dashboardStore.visibleColumns);
+const visibleColumns = computed(() => props.visibleColumns || props.snapshot?.visibleColumns || dashboardStore.visibleColumns);
+const underwriting_loss_ratios = computed(() => props.snapshot?.underwriting_loss_ratios ?? dashboardStore.underwriting_loss_ratios);
+const uw_acc = computed(() => props.snapshot?.uw_acc ?? dashboardStore.dashboards.uw_acc);
 
 function onClickColumn(item: string) {
   emit('onChangeShowColumn', { val: !props.showColumn[item], item: item });
@@ -50,7 +53,7 @@ const claimsType = computed<string[]>(() => props.claimsType || portfolioStore.p
             .values(margin)
             .slice(0, index)
             .reduce((ps: number, s: number) => ps + s, 0) *
-            (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw'
+            (underwriting_loss_ratios == 'Written' && uw_acc == 'uw'
               ? 5 - (visibleColumns?.includes(3) ? 0 : 3)
               : 4 - (visibleColumns?.includes(3) ? 0 : 2)) +
           'px',
@@ -73,7 +76,7 @@ const claimsType = computed<string[]>(() => props.claimsType || portfolioStore.p
             .values(margin)
             .slice(0, index)
             .reduce((ps: number, s: number) => ps + s, 0) *
-            (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw'
+            (underwriting_loss_ratios == 'Written' && uw_acc == 'uw'
               ? 5 - (visibleColumns?.includes(3) ? 0 : 3)
               : 4 - (visibleColumns?.includes(3) ? 0 : 2)) +
           'px',
@@ -96,7 +99,7 @@ const claimsType = computed<string[]>(() => props.claimsType || portfolioStore.p
             .values(margin)
             .slice(0, index)
             .reduce((ps: number, s: number) => ps + s, 0) *
-            (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw'
+            (underwriting_loss_ratios == 'Written' && uw_acc == 'uw'
               ? 5 - (visibleColumns?.includes(3) ? 0 : 3)
               : 4 - (visibleColumns?.includes(3) ? 0 : 2)) +
           'px',
@@ -120,7 +123,7 @@ const claimsType = computed<string[]>(() => props.claimsType || portfolioStore.p
             .values(margin)
             .slice(0, index)
             .reduce((ps: number, s: number) => ps + s, 0) *
-            (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw' ? 5 : 4) +
+            (underwriting_loss_ratios == 'Written' && uw_acc == 'uw' ? 5 : 4) +
           'px',
         transition: '0.5s ease-out transform',
         transform: 'translateX(' + margin[item] * 3 + 'px)',
@@ -131,8 +134,8 @@ const claimsType = computed<string[]>(() => props.claimsType || portfolioStore.p
     </th>
     <th
       v-if="
-        dashboardStore.underwriting_loss_ratios == 'Written' &&
-        dashboardStore.dashboards.uw_acc == 'uw' &&
+        underwriting_loss_ratios == 'Written' &&
+        uw_acc == 'uw' &&
         visibleColumns?.includes(3)
       "
       class="fixWidth header-teal text-red-500 absolute z-10 pt-9 cursor-pointer"
@@ -146,7 +149,7 @@ const claimsType = computed<string[]>(() => props.claimsType || portfolioStore.p
             .values(margin)
             .slice(0, index)
             .reduce((ps: number, s: number) => ps + s, 0) *
-            (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw' ? 5 : 4) +
+            (underwriting_loss_ratios == 'Written' && uw_acc == 'uw' ? 5 : 4) +
           'px',
         transition: '0.5s ease-out transform',
         transform: 'translateX(' + margin[item] * 4 + 'px)',
@@ -168,13 +171,13 @@ const claimsType = computed<string[]>(() => props.claimsType || portfolioStore.p
             .values(margin)
             .slice(0, index)
             .reduce((ps: number, s: number) => ps + s, 0) *
-            (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw' ? 5 : 4) +
+            (underwriting_loss_ratios == 'Written' && uw_acc == 'uw' ? 5 : 4) +
           'px',
         transition: '0.5s ease-out transform',
         transform:
           'translateX(' +
           margin[item] *
-            (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw' ? 5 : 4) +
+            (underwriting_loss_ratios == 'Written' && uw_acc == 'uw' ? 5 : 4) +
           'px)',
       }"
       :class="showColumn[item] ? 'pt-9' : 'pt-5'"
@@ -194,7 +197,7 @@ const claimsType = computed<string[]>(() => props.claimsType || portfolioStore.p
             .values(margin)
             .slice(0, index)
             .reduce((ps: number, s: number) => ps + s, 0) *
-            (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw'
+            (underwriting_loss_ratios == 'Written' && uw_acc == 'uw'
               ? 5 - (visibleColumns?.includes(3) ? 0 : 3)
               : 4 - (visibleColumns?.includes(3) ? 0 : 2)) +
           'px',
@@ -202,7 +205,7 @@ const claimsType = computed<string[]>(() => props.claimsType || portfolioStore.p
         width:
           112 +
           margin[item] *
-            (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw'
+            (underwriting_loss_ratios == 'Written' && uw_acc == 'uw'
               ? 5 - (visibleColumns?.includes(3) ? 0 : 3)
               : 4 - (visibleColumns?.includes(3) ? 0 : 2)) +
           'px',
@@ -226,7 +229,7 @@ const claimsType = computed<string[]>(() => props.claimsType || portfolioStore.p
         112 * (leftColumnSize + claimsType.length) -
         dashboardStore.offMarginGWPGEP +
         (<any>Object).values(margin).reduce((ps: number, s: number) => ps + s, 0) *
-          (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw'
+          (underwriting_loss_ratios == 'Written' && uw_acc == 'uw'
             ? 5 - (visibleColumns?.includes(3) ? 0 : 3)
             : 4 - (visibleColumns?.includes(3) ? 0 : 2)) +
         'px',
@@ -247,7 +250,7 @@ const claimsType = computed<string[]>(() => props.claimsType || portfolioStore.p
         112 * (leftColumnSize + claimsType.length) -
         dashboardStore.offMarginGWPGEP +
         (<any>Object).values(margin).reduce((ps: number, s: number) => ps + s, 0) *
-          (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw'
+          (underwriting_loss_ratios == 'Written' && uw_acc == 'uw'
             ? 5 - (visibleColumns?.includes(3) ? 0 : 3)
             : 4 - (visibleColumns?.includes(3) ? 0 : 2)) +
         'px',
@@ -268,7 +271,7 @@ const claimsType = computed<string[]>(() => props.claimsType || portfolioStore.p
         112 * (leftColumnSize + claimsType.length) -
         dashboardStore.offMarginGWPGEP +
         (<any>Object).values(margin).reduce((ps: number, s: number) => ps + s, 0) *
-          (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw'
+          (underwriting_loss_ratios == 'Written' && uw_acc == 'uw'
             ? 5 - (visibleColumns?.includes(3) ? 0 : 3)
             : 4 - (visibleColumns?.includes(3) ? 0 : 2)) +
         'px',
@@ -289,7 +292,7 @@ const claimsType = computed<string[]>(() => props.claimsType || portfolioStore.p
         112 * (leftColumnSize + claimsType.length) -
         dashboardStore.offMarginGWPGEP +
         (<any>Object).values(margin).reduce((ps: number, s: number) => ps + s, 0) *
-          (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw' ? 5 : 4) +
+          (underwriting_loss_ratios == 'Written' && uw_acc == 'uw' ? 5 : 4) +
         'px',
       transition: '0.5s ease-out all',
       transform: 'translateX(' + totalMargin * 3 + 'px)',
@@ -300,8 +303,8 @@ const claimsType = computed<string[]>(() => props.claimsType || portfolioStore.p
   </th>
   <th
     v-if="
-      dashboardStore.underwriting_loss_ratios == 'Written' &&
-      dashboardStore.dashboards.uw_acc == 'uw' &&
+      underwriting_loss_ratios == 'Written' &&
+      uw_acc == 'uw' &&
       visibleColumns?.includes(3) &&
       !props.hideTotals
     "
@@ -313,7 +316,7 @@ const claimsType = computed<string[]>(() => props.claimsType || portfolioStore.p
         112 * (leftColumnSize + claimsType.length) -
         dashboardStore.offMarginGWPGEP +
         (<any>Object).values(margin).reduce((ps: number, s: number) => ps + s, 0) *
-          (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw' ? 5 : 4) +
+          (underwriting_loss_ratios == 'Written' && uw_acc == 'uw' ? 5 : 4) +
         'px',
       transition: '0.5s ease-out all',
       transform: 'translateX(' + totalMargin * 4 + 'px)',
@@ -333,13 +336,13 @@ const claimsType = computed<string[]>(() => props.claimsType || portfolioStore.p
         112 * (leftColumnSize + claimsType.length) -
         dashboardStore.offMarginGWPGEP +
         (<any>Object).values(margin).reduce((ps: number, s: number) => ps + s, 0) *
-          (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw' ? 5 : 4) +
+          (underwriting_loss_ratios == 'Written' && uw_acc == 'uw' ? 5 : 4) +
         'px',
       transition: '0.5s ease-out all',
       transform:
         'translateX(' +
         totalMargin *
-          (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw' ? 5 : 4) +
+          (underwriting_loss_ratios == 'Written' && uw_acc == 'uw' ? 5 : 4) +
         'px)',
     }"
     @click="onClickTotalColumn"
@@ -356,7 +359,7 @@ const claimsType = computed<string[]>(() => props.claimsType || portfolioStore.p
         112 * (leftColumnSize + claimsType.length) -
         dashboardStore.offMarginGWPGEP +
         (<any>Object).values(margin).reduce((ps: number, s: number) => ps + s, 0) *
-          (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw'
+          (underwriting_loss_ratios == 'Written' && uw_acc == 'uw'
             ? 5 - (visibleColumns?.includes(3) ? 0 : 3)
             : 4 - (visibleColumns?.includes(3) ? 0 : 2)) +
         'px',
@@ -364,7 +367,7 @@ const claimsType = computed<string[]>(() => props.claimsType || portfolioStore.p
       width:
         112 +
         totalMargin *
-          (dashboardStore.underwriting_loss_ratios == 'Written' && dashboardStore.dashboards.uw_acc == 'uw'
+          (underwriting_loss_ratios == 'Written' && uw_acc == 'uw'
             ? 5 - (visibleColumns?.includes(3) ? 0 : 3)
             : 4 - (visibleColumns?.includes(3) ? 0 : 2)) +
         'px',

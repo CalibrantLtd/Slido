@@ -235,7 +235,7 @@ const finish = () => {
       display: dashboards.value.ratio_amount
     },
     dashboardFilters: {
-      accidentUnderwriting: dashboardStore.filterAccidentUnderwriting,
+      accidentUnderwriting: dashboards.value.uw_acc,
       selectedFilters: dashboardStore.selectedFilters
     }
   }

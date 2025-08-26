@@ -96,6 +96,7 @@
     <PortfolioBounceSelectionModal
       :visible="isPortfolioModalVisible"
       :portfolios-data="portfoliosData"
+      context="editor"
       @close="onPortfolioModalClose"
       @confirm="onPortfolioModalConfirm"
       @request-template-data="onRequestTemplateData"
@@ -397,22 +398,6 @@ const onPortfolioModalConfirm = async (portfolio: any, bounce: any) => {
   }
   
   try {
-    let hasProcessedDashboardTables = false
-    for (const slide of slides.value) {
-      for (const element of slide.elements) {
-        if (element.type === 'dashboard-table' && !element.isTemplatePlaceholder && element.portfolioId) {
-          hasProcessedDashboardTables = true
-          break
-        }
-      }
-      if (hasProcessedDashboardTables) break
-    }
-    
-    if (hasProcessedDashboardTables) {
-      hasProcessedTables.value = true
-      return
-    }
-    
     const mockDashboardTables = await scanTemplateForMockDashboardTables()
     
     if (mockDashboardTables.length > 0) {
@@ -430,19 +415,23 @@ const onPortfolioModalConfirm = async (portfolio: any, bounce: any) => {
 const scanTemplateForMockDashboardTables = async () => {
   const mockTables: any[] = []
   
-  for (let slideIndex = 0; slideIndex < slides.value.length; slideIndex++) {
-    const slide = slides.value[slideIndex]
+  const slidesCopy = JSON.parse(JSON.stringify(slides.value))
+  
+  for (let slideIndex = 0; slideIndex < slidesCopy.length; slideIndex++) {
+    const slide = slidesCopy[slideIndex]
     
     for (let elementIndex = 0; elementIndex < slide.elements.length; elementIndex++) {
       const element = slide.elements[elementIndex]
       
-      if (element.type === 'dashboard-table' && element.isTemplatePlaceholder) {
-        const mockTable = {
-          slideId: slide.id,
-          elementId: element.id,
-          element: element
+      if (element.type === 'dashboard-table') {
+        if (element.isTemplatePlaceholder) {
+          const mockTable = {
+            slideId: slide.id,
+            elementId: element.id,
+            element: JSON.parse(JSON.stringify(element)) // Create a deep copy of the element
+          }
+          mockTables.push(mockTable)
         }
-        mockTables.push(mockTable)
       }
     }
   }
@@ -451,9 +440,8 @@ const scanTemplateForMockDashboardTables = async () => {
 }
 
 const showDashboardWizardForMockTables = async (mockTables: any[], portfolio: any, bounce: any) => {
-  for (let i = 0; i < mockTables.length; i++) {
-    const mockTable = mockTables[i]
-    
+  // Create all wizard instances first
+  const wizardPromises = mockTables.map((mockTable) => {
     const wizardInstance = {
       portfolio,
       bounce,
@@ -461,12 +449,13 @@ const showDashboardWizardForMockTables = async (mockTables: any[], portfolio: an
       wizardType: 'dashboard-table'
     }
     
-    const wizardPromise = new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       onShowWizard(wizardInstance, resolve, reject)
     })
-    
-    await wizardPromise
-  }
+  })
+  
+  // Wait for all wizards to complete
+  await Promise.all(wizardPromises)
 }
 
 const exportTemplateWithRealData = async () => {
@@ -500,12 +489,12 @@ const exportTemplateWithRealData = async () => {
 
     const reportId = await reportService.saveReport({
       name: reportName,
-      templateId: template.value?.id || '',
+      templateId: template.value?.id || templateId || '',
       templateName: templateName.value,
-      portfolioId: selectedPortfolio.value.id,
-      portfolioName: selectedPortfolio.value.name,
-      bounceId: selectedBounce.value.id,
-      bounceName: selectedBounce.value.displayName || selectedBounce.value.name,
+      portfolioId: selectedPortfolio.value?.id || '',
+      portfolioName: selectedPortfolio.value?.name || '',
+      bounceId: selectedBounce.value?.id || '',
+      bounceName: selectedBounce.value?.displayName || selectedBounce.value?.name || '',
       pptData: pptBlob,
       slideImages: slideImages
     })
@@ -709,11 +698,15 @@ const onWizardFinish = async (wizardData: any) => {
       return
     }
     
+    // Store the wizard data for this specific wizard to prevent cross-contamination
+    currentWizard.wizardData = JSON.parse(JSON.stringify(wizardData)) // Deep copy
+    
+    
     globalStore.setLoading(true)
     
     try {
-      await replaceMockTableWithRealData(currentWizard.wizardInstance.mockTable, wizardData, currentWizard)
-      currentWizard.resolve(wizardData)
+      await replaceMockTableWithRealData(currentWizard.wizardInstance.mockTable, currentWizard.wizardData, currentWizard)
+      currentWizard.resolve(currentWizard.wizardData)
     } catch (error) {
       console.error('Error in onWizardFinish:', error)
       currentWizard.reject(error)
@@ -731,9 +724,14 @@ const onWizardFinish = async (wizardData: any) => {
     isWizardModalVisible.value = false
     currentWizardData.value = null
     
-    // In template viewer context, we don't export the template with real data
-    // The template should remain as mock placeholders
-    // Real data will be applied when creating presentations or reports
+    globalStore.setLoading(true)
+    try {
+      await exportTemplateWithRealData()
+    } catch (error) {
+      console.error('Error exporting template:', error)
+    } finally {
+      globalStore.setLoading(false)
+    }
   }
 }
 
@@ -773,6 +771,7 @@ const replaceMockTableWithRealData = async (mockTable: any, wizardData: any, cur
       attritionalLargeExpanded: element.attritionalLargeExpanded
     }
     
+    
     element.isTemplatePlaceholder = false
     element.selectedFilters = wizardData.dashboardFilters.selectedFilters
     element.accidentUnderwriting = wizardData.dashboardFilters.accidentUnderwriting
@@ -782,22 +781,25 @@ const replaceMockTableWithRealData = async (mockTable: any, wizardData: any, cur
     element.bounceId = currentWizard.wizardInstance.bounce.id
     element.bounceName = currentWizard.wizardInstance.bounce.displayName || currentWizard.wizardInstance.bounce.name
     
-    if (template.value?.id === 'title-and-attritional') {
+    
+    // Apply template-specific flags based on the element's original configuration
+    // This ensures each element gets its own specific configuration, not the template-wide one
+    if (element.attritionalOnly) {
       element.attritionalOnly = true
     }
-    if (template.value?.id === 'title-and-large') {
+    if (element.largeOnly) {
       element.largeOnly = true
     }
-    if (template.value?.id === 'title-and-weather') {
+    if (element.weatherOnly) {
       element.weatherOnly = true
     }
-    if (template.value?.id === 'title-and-total-ultimate') {
+    if (element.totalUltimateOnly) {
       element.totalUltimateOnly = true
     }
-    if (template.value?.id === 'title-and-loss-ratios') {
+    if (element.lossRatiosOnly) {
       element.lossRatiosOnly = true
     }
-    if (template.value?.id === 'title-table-text-expanded') {
+    if (element.attritionalLargeExpanded) {
       element.attritionalLargeExpanded = true
     }
     
@@ -812,6 +814,48 @@ const replaceMockTableWithRealData = async (mockTable: any, wizardData: any, cur
     
     await loadPortfolioDataForElement(element, currentWizard.wizardInstance.portfolio, currentWizard.wizardInstance.bounce)
     
+    // Take a per-element snapshot of the dashboard state so this table renders independently
+    try {
+      const { useDashboardStore } = await import('@/store/dashboard')
+      const dashboardStore = useDashboardStore()
+      const deepCopy = (obj: any) => JSON.parse(JSON.stringify(obj))
+      element._snapshot = {
+        dashboards: deepCopy(dashboardStore.dashboards),
+        dashboard_data: deepCopy(dashboardStore.dashboard_data),
+        dashboard_data_column: deepCopy(dashboardStore.dashboard_data_column),
+        seasonality_parameters: deepCopy(dashboardStore.seasonality_parameters),
+        totalData: deepCopy(dashboardStore.totalData),
+        quarterly_dashboard_data: deepCopy(dashboardStore.quarterly_dashboard_data),
+        binder_dashboard_data: deepCopy(dashboardStore.binder_dashboard_data),
+        yearly_dashboard_data: deepCopy(dashboardStore.yearly_dashboard_data),
+        offMarginGWPGEP: dashboardStore.offMarginGWPGEP,
+        isQuarterSubTotal: dashboardStore.isQuarterSubTotal,
+        isQuarterSubTotalUp: dashboardStore.isQuarterSubTotalUp,
+        isBinderSubTotal: dashboardStore.isBinderSubTotal,
+        isBinderSubTotalUp: dashboardStore.isBinderSubTotalUp,
+        isYearSubTotal: dashboardStore.isYearSubTotal,
+        isYearSubTotalUp: dashboardStore.isYearSubTotalUp,
+        showColumn: deepCopy(dashboardStore.showColumn),
+        margin: deepCopy(dashboardStore.margin),
+        showColumnTotal: dashboardStore.showColumnTotal,
+        totalMargin: dashboardStore.totalMargin,
+        isShowingExposure: dashboardStore.isShowingExposure,
+        underwriting_loss_ratios: dashboardStore.underwriting_loss_ratios,
+        visibleColumns: deepCopy(dashboardStore.visibleColumns),
+        // Add the core dashboard configuration values
+        gwpnwp: dashboardStore.dashboards.gwpnwp,
+        ccr_nlr: dashboardStore.dashboards.ccr_nlr,
+        seasonFactor: dashboardStore.dashboards.seasonFactor,
+        ratio_amount: dashboardStore.dashboards.ratio_amount,
+        uw_acc: dashboardStore.dashboards.uw_acc,
+        mqy: dashboardStore.dashboards.mqy,
+        isBindedYears: dashboardStore.isBindedYears
+      }
+      
+    } catch (e) {
+      console.error('Failed to create element snapshot:', e)
+    }
+
     element._originalMockState = originalState
     
   } catch (error) {
