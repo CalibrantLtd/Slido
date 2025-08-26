@@ -27,6 +27,8 @@ const props = defineProps<{
   containerWidth?: number;
   containerHeight?: number;
   attritionalOnly?: boolean;
+  largeOnly?: boolean;
+  weatherOnly?: boolean;
 }>();
 const mqy = computed(() => dashboardStore.dashboards.mqy);
 
@@ -46,16 +48,38 @@ const attritionalKey = computed(() => {
   const match = list.find((x) => String(x).toUpperCase() === 'ATTRITIONAL');
   return match || 'ATTRITIONAL';
 });
+
+const largeKey = computed(() => {
+  const list = (portfolioStore.parameters?.claims_nature as string[]) || [];
+  const match = list.find((x) => String(x).toUpperCase() === 'LARGE');
+  return match || 'LARGE';
+});
+
+const weatherKey = computed(() => {
+  const list = (portfolioStore.parameters?.claims_nature as string[]) || [];
+  const match = list.find((x) => String(x).toUpperCase() === 'WEATHER');
+  return match || 'WEATHER';
+});
 const showColumnTotal = computed(() => dashboardStore.showColumnTotal);
 const totalMargin = computed(() => dashboardStore.totalMargin);
 const showColumn = computed(() => dashboardStore.showColumn);
 const margin = computed(() => dashboardStore.margin);
 
-// Force expansion for ATTRITIONAL when attritionalOnly
+// Force expansion for specific claims type when in single-claims mode
 const filteredMargin = computed(() => {
   if (props.attritionalOnly) {
     const result: any = { ...dashboardStore.margin };
     result[attritionalKey.value] = 112; // expanded spacing to show all sub-columns
+    return result;
+  }
+  if (props.largeOnly) {
+    const result: any = { ...dashboardStore.margin };
+    result[largeKey.value] = 112; // expanded spacing to show all sub-columns
+    return result;
+  }
+  if (props.weatherOnly) {
+    const result: any = { ...dashboardStore.margin };
+    result[weatherKey.value] = 112; // expanded spacing to show all sub-columns
     return result;
   }
   return dashboardStore.margin;
@@ -66,10 +90,10 @@ const leftColumnSize = computed(
 );
 
 const filteredLeftColumnSize = computed(() => 
-  props.attritionalOnly ? 1 : leftColumnSize.value
+  (props.attritionalOnly || props.largeOnly || props.weatherOnly) ? 1 : leftColumnSize.value
 );
 
-// Filter columns for attritional-only mode
+// Filter columns for single-claims mode
 const filteredShowColumn = computed(() => {
   if (props.attritionalOnly) {
     const filtered: any = {};
@@ -85,6 +109,34 @@ const filteredShowColumn = computed(() => {
     }
     return filtered;
   }
+  if (props.largeOnly) {
+    const filtered: any = {};
+    // Only show LARGE columns and ensure they are expanded (true)
+    Object.keys(dashboardStore.showColumn).forEach(key => {
+      if (key.toUpperCase() === 'LARGE' || key === largeKey.value) {
+        filtered[key] = true; // Force expanded state
+      }
+    });
+    // If key wasn't present yet, add by resolved label
+    if (!filtered[largeKey.value]) {
+      filtered[largeKey.value] = true;
+    }
+    return filtered;
+  }
+  if (props.weatherOnly) {
+    const filtered: any = {};
+    // Only show WEATHER columns and ensure they are expanded (true)
+    Object.keys(dashboardStore.showColumn).forEach(key => {
+      if (key.toUpperCase() === 'WEATHER' || key === weatherKey.value) {
+        filtered[key] = true; // Force expanded state
+      }
+    });
+    // If key wasn't present yet, add by resolved label
+    if (!filtered[weatherKey.value]) {
+      filtered[weatherKey.value] = true;
+    }
+    return filtered;
+  }
   return dashboardStore.showColumn;
 });
 
@@ -92,26 +144,32 @@ const filteredClaimsType = computed(() => {
   if (props.attritionalOnly) {
     return [attritionalKey.value];
   }
+  if (props.largeOnly) {
+    return [largeKey.value];
+  }
+  if (props.weatherOnly) {
+    return [weatherKey.value];
+  }
   return portfolioStore.parameters.claims_nature || ['ATTRITIONAL', 'LARGE'];
 });
 
-// Filter visible columns for attritional-only mode
+// Filter visible columns for single-claims mode
 const filteredVisibleColumns = computed(() => {
-  if (props.attritionalOnly) {
-    return [3];
+  if (props.attritionalOnly || props.largeOnly || props.weatherOnly) {
+    return [3]; // Enable IBNR and Ultimate sub-columns for the specific claims type
   }
   return dashboardStore.visibleColumns;
 });
 
-// Filter main columns for attritional-only mode (hide GWP, GEP, Commission, CCR, Seasonality)
+// Filter main columns for single-claims mode (hide GWP, GEP, Commission, CCR, Seasonality)
 const filteredMainColumns = computed(() => {
-  if (props.attritionalOnly) {
+  if (props.attritionalOnly || props.largeOnly || props.weatherOnly) {
     return [];
   }
   return dashboardStore.visibleColumns;
 });
 
-const hideTotals = computed(() => !!props.attritionalOnly);
+const hideTotals = computed(() => !!(props.attritionalOnly || props.largeOnly || props.weatherOnly));
 
 const tableEl = ref<HTMLElement | null>(null);
 const containerEl = ref<HTMLElement | null>(null);
@@ -124,12 +182,12 @@ const containerHeightPx = ref(0);
 
 function updateNaturalSize() {
   if (tableEl.value) {
-    if (props.attritionalOnly) {
+    if (props.attritionalOnly || props.largeOnly || props.weatherOnly) {
       const periodColumnWidth = 112;
       const columnWidth = 112; 
-      const baseAttritionalColumns = 5; // Paid, O/S, Incurred, IBNR, Ultimate
+      const baseColumns = 5; // Paid, O/S, Incurred, IBNR, Ultimate
       const hasUnearned = dashboardStore.underwriting_loss_ratios === 'Written' && dashboardStore.dashboards.uw_acc === 'uw';
-      const totalColumns = baseAttritionalColumns + (hasUnearned ? 1 : 0);
+      const totalColumns = baseColumns + (hasUnearned ? 1 : 0);
       const calculatedWidth = periodColumnWidth + (totalColumns * columnWidth);
       
       naturalWidth.value = calculatedWidth + 5; 
@@ -172,7 +230,7 @@ onMounted(async () => {
   await nextTick();
   updateNaturalSize();
   
-  if (props.attritionalOnly) {
+  if (props.attritionalOnly || props.largeOnly || props.weatherOnly) {
     setTimeout(() => {
       updateNaturalSize();
     }, 100);

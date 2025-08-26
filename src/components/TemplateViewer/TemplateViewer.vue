@@ -745,7 +745,9 @@ const replaceMockTableWithRealData = async (mockTable: any, wizardData: any, cur
       portfolioName: element.portfolioName,
       bounceId: element.bounceId,
       bounceName: element.bounceName,
-      attritionalOnly: element.attritionalOnly
+      attritionalOnly: element.attritionalOnly,
+      largeOnly: element.largeOnly,
+      weatherOnly: element.weatherOnly
     }
     
     element.isTemplatePlaceholder = false
@@ -759,6 +761,12 @@ const replaceMockTableWithRealData = async (mockTable: any, wizardData: any, cur
     
     if (template.value?.id === 'title-and-attritional') {
       element.attritionalOnly = true
+    }
+    if (template.value?.id === 'title-and-large') {
+      element.largeOnly = true
+    }
+    if (template.value?.id === 'title-and-weather') {
+      element.weatherOnly = true
     }
     
     const svgImage = slide.elements.find(e => e.type === 'image' && e.src?.includes('MockTable.svg'))
@@ -793,6 +801,8 @@ const restoreMockTables = () => {
           element.bounceId = element._originalMockState.bounceId
           element.bounceName = element._originalMockState.bounceName
           element.attritionalOnly = element._originalMockState.attritionalOnly
+          element.largeOnly = element._originalMockState.largeOnly
+          element.weatherOnly = element._originalMockState.weatherOnly
           
           const svgImage = slide.elements.find(e => e.type === 'image' && e.src?.includes('MockTable.svg'))
           if (svgImage && svgImage._originalVisibility !== undefined) {

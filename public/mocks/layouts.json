@@ -752,5 +752,149 @@
         "size": "cover"
       }
     }
+  },
+  {
+    "id": "title-and-large",
+    "name": "Title and Large",
+    "elements": [
+      {
+        "type": "text",
+        "id": "date-text",
+        "left": 30,
+        "top": 20,
+        "width": 200,
+        "height": 30,
+        "content": "<p style='text-align: left;'><span style='color: #55B691; font-size: 16px;'>{{currentDate}}</span></p>",
+        "rotate": 0,
+        "defaultFontName": "{{fontName}}",
+        "defaultColor": "#55B691"
+      },
+      {
+        "type": "text",
+        "id": "title-text",
+        "left": 90,
+        "top": 95,
+        "width": 800,
+        "height": 100,
+        "content": "<p style='text-align: left;'><span style='color: #55B691; font-size: 48px; font-weight: bold; opacity: 0.5;'>Add Title</span></p>",
+        "rotate": 0,
+        "defaultFontName": "{{fontName}}",
+        "defaultColor": "#55B691"
+      },
+      {
+        "type": "image",
+        "id": "mock-table-image",
+        "left": 50,
+        "top": 170,
+        "width": 680,
+        "height": 320,
+        "src": "/images/MockTable.svg",
+        "rotate": 0
+      },
+      {
+        "type": "dashboard-table",
+        "id": "dashboard-table-1",
+        "left": 50,
+        "top": 170,
+        "width": 680,
+        "height": 320,
+        "isTemplatePlaceholder": true,
+        "portfolioId": null,
+        "bounceId": null,
+        "isInvisible": true,
+        "largeOnly": true
+      },
+      {
+        "type": "text",
+        "id": "sybil-text",
+        "left": 10,
+        "top": 513,
+        "width": 200,
+        "height": 30,
+        "content": "<p style='text-align: left;'><span style='color: #ffffff; font-size: 16px; font-family: Arial;'>sybil.cloud</span></p>",
+        "rotate": 0,
+        "defaultFontName": "Arial",
+        "defaultColor": "#ffffff"
+      }
+    ],
+    "background": {
+      "type": "image",
+      "image": {
+        "src": "/images/Title_and_content2.svg",
+        "size": "cover"
+      }
+    }
+  },
+  {
+    "id": "title-and-weather",
+    "name": "Title and Weather",
+    "elements": [
+      {
+        "type": "text",
+        "id": "date-text",
+        "left": 30,
+        "top": 20,
+        "width": 200,
+        "height": 30,
+        "content": "<p style='text-align: left;'><span style='color: #55B691; font-size: 16px;'>{{currentDate}}</span></p>",
+        "rotate": 0,
+        "defaultFontName": "{{fontName}}",
+        "defaultColor": "#55B691"
+      },
+      {
+        "type": "text",
+        "id": "title-text",
+        "left": 90,
+        "top": 95,
+        "width": 800,
+        "height": 100,
+        "content": "<p style='text-align: left;'><span style='color: #55B691; font-size: 48px; font-weight: bold; opacity: 0.5;'>Add Title</span></p>",
+        "rotate": 0,
+        "defaultFontName": "{{fontName}}",
+        "defaultColor": "#55B691"
+      },
+      {
+        "type": "image",
+        "id": "mock-table-image",
+        "left": 50,
+        "top": 170,
+        "width": 680,
+        "height": 320,
+        "src": "/images/MockTable.svg",
+        "rotate": 0
+      },
+      {
+        "type": "dashboard-table",
+        "id": "dashboard-table-1",
+        "left": 50,
+        "top": 170,
+        "width": 680,
+        "height": 320,
+        "isTemplatePlaceholder": true,
+        "portfolioId": null,
+        "bounceId": null,
+        "isInvisible": true,
+        "weatherOnly": true
+      },
+      {
+        "type": "text",
+        "id": "sybil-text",
+        "left": 10,
+        "top": 513,
+        "width": 200,
+        "height": 30,
+        "content": "<p style='text-align: left;'><span style='color: #ffffff; font-size: 16px; font-family: Arial;'>sybil.cloud</span></p>",
+        "rotate": 0,
+        "defaultFontName": "Arial",
+        "defaultColor": "#ffffff"
+      }
+    ],
+    "background": {
+      "type": "image",
+      "image": {
+        "src": "/images/Title_and_content2.svg",
+        "size": "cover"
+      }
+    }
   }
 ]
