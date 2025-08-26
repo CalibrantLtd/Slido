@@ -47,6 +47,7 @@
           :total-ultimate-only="elementInfo.totalUltimateOnly"
           :loss-ratios-only="elementInfo.lossRatiosOnly"
           :attritional-large-expanded="elementInfo.attritionalLargeExpanded"
+          :large-loss-load="elementInfo.largeLossLoad"
           :max-rows="elementInfo.maxRows"
         />
         
@@ -87,6 +88,7 @@ const props = defineProps<{
     totalUltimateOnly?: boolean
     lossRatiosOnly?: boolean
     attritionalLargeExpanded?: boolean
+    largeLossLoad?: boolean
   }
   selectElement: (e: MouseEvent | TouchEvent, element: PPTElement, canMove?: boolean) => void
   contextmenus: () => ContextmenuItem[] | null

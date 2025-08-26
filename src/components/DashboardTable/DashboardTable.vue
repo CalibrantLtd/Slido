@@ -33,6 +33,7 @@ const props = defineProps<{
   totalUltimateOnly?: boolean;
   lossRatiosOnly?: boolean;
   attritionalLargeExpanded?: boolean;
+  largeLossLoad?: boolean;
   maxRows?: number;
 }>();
 
@@ -93,6 +94,14 @@ const margin = computed(() => dashboardStore.margin);
 
 // Force expansion for specific claims type when in single-claims mode
 const filteredMargin = computed(() => {
+  if (props.largeLossLoad) {
+    const result: any = { ...dashboardStore.margin };
+    // Keep all columns collapsed (0) - show Period, GWP, GEP, and Large Ultimate but none expanded
+    Object.keys(result).forEach(key => {
+      result[key] = 0; // collapsed state
+    });
+    return result;
+  }
   if (props.attritionalOnly) {
     const result: any = { ...dashboardStore.margin };
     result[attritionalKey.value] = 112; // expanded spacing to show all sub-columns
@@ -156,6 +165,20 @@ const filteredLeftColumnSize = computed(() =>
 
 // Filter columns for single-claims mode
 const filteredShowColumn = computed(() => {
+  if (props.largeLossLoad) {
+    const filtered: any = {};
+    // Only show LARGE columns and ensure they are collapsed (false)
+    Object.keys(dashboardStore.showColumn).forEach(key => {
+      if (key.toUpperCase() === 'LARGE' || key === largeKey.value) {
+        filtered[key] = false; // Force collapsed state
+      }
+    });
+    // If key wasn't present yet, add by resolved label
+    if (!filtered[largeKey.value]) {
+      filtered[largeKey.value] = false;
+    }
+    return filtered;
+  }
   if (props.attritionalOnly) {
     const filtered: any = {};
     // Only show ATTRITIONAL columns and ensure they are expanded (true)
@@ -231,6 +254,9 @@ const filteredShowColumn = computed(() => {
 });
 
 const filteredClaimsType = computed(() => {
+  if (props.largeLossLoad) {
+    return [largeKey.value]; // Only show Large claims type
+  }
   if (props.attritionalOnly) {
     return [attritionalKey.value];
   }
@@ -251,6 +277,9 @@ const filteredClaimsType = computed(() => {
 
 // Filter visible columns for single-claims mode
 const filteredVisibleColumns = computed(() => {
+  if (props.largeLossLoad) {
+    return [1, 2, 3]; // Show GWP, GEP, and enable Large expansion
+  }
   if (props.attritionalOnly || props.largeOnly || props.weatherOnly) {
     return [3]; // Enable IBNR and Ultimate sub-columns for the specific claims type
   }
@@ -268,6 +297,9 @@ const filteredVisibleColumns = computed(() => {
 
 // Filter main columns for single-claims mode (hide GWP, GEP, Commission, CCR, Seasonality)
 const filteredMainColumns = computed(() => {
+  if (props.largeLossLoad) {
+    return [1, 2]; // Show GWP and GEP columns only
+  }
   if (props.attritionalOnly || props.largeOnly || props.weatherOnly) {
     return [];
   }
@@ -283,7 +315,7 @@ const filteredMainColumns = computed(() => {
   return dashboardStore.visibleColumns;
 });
 
-const hideTotals = computed(() => !!(props.attritionalOnly || props.largeOnly || props.weatherOnly));
+const hideTotals = computed(() => !!(props.attritionalOnly || props.largeOnly || props.weatherOnly || props.largeLossLoad));
 
 const tableEl = ref<HTMLElement | null>(null);
 const containerEl = ref<HTMLElement | null>(null);
@@ -296,7 +328,16 @@ const containerHeightPx = ref(0);
 
 function updateNaturalSize() {
   if (tableEl.value) {
-    if (props.attritionalOnly || props.largeOnly || props.weatherOnly) {
+    if (props.largeLossLoad) {
+      // For large loss load mode, calculate based on Period, GWP, GEP, and Large Ultimate only
+      // Make it slightly smaller to reduce extra space
+      const periodColumnWidth = 110; // Period column
+      const gwpGepColumns = 2; // GWP and GEP columns  
+      const largeColumn = 1; // Large Ultimate column
+      
+      const calculatedWidth = periodColumnWidth + (gwpGepColumns * 110) + (largeColumn * 110);
+      naturalWidth.value = calculatedWidth;
+    } else if (props.attritionalOnly || props.largeOnly || props.weatherOnly) {
       const periodColumnWidth = 112;
       const columnWidth = 112; 
       const baseColumns = 5; // Paid, O/S, Incurred, IBNR, Ultimate
@@ -374,7 +415,7 @@ onMounted(async () => {
   await nextTick();
   updateNaturalSize();
   
-  if (props.attritionalOnly || props.largeOnly || props.weatherOnly || props.totalUltimateOnly || props.lossRatiosOnly) {
+  if (props.attritionalOnly || props.largeOnly || props.weatherOnly || props.totalUltimateOnly || props.lossRatiosOnly || props.largeLossLoad) {
     // Defer sizing until after DOM renders all headers/cells so width measurement is accurate
     setTimeout(() => {
       updateNaturalSize();
@@ -476,6 +517,9 @@ const mockTableImage = computed(() => {
   }
   if (props.attritionalLargeExpanded) {
     return '/images/mock-table-expanded.svg';
+  }
+  if (props.largeLossLoad) {
+    return '/images/mock-table-large-loss-load.svg';
   }
   return '/images/MockTable.svg';
 });

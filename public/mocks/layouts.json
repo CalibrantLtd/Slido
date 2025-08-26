@@ -1149,5 +1149,80 @@
         "size": "cover"
       }
     }
+  },
+  {
+    "id": "large-loss-load",
+    "name": "Large Loss Load",
+    "elements": [
+      {
+        "type": "text",
+        "id": "date-text",
+        "left": 30,
+        "top": 20,
+        "width": 200,
+        "height": 30,
+        "content": "<p style='text-align: left;'><span style='color: #55B691; font-size: 16px;'>{{currentDate}}</span></p>",
+        "rotate": 0,
+        "defaultFontName": "{{fontName}}",
+        "defaultColor": "#55B691"
+      },
+      {
+        "type": "text",
+        "id": "title-text",
+        "left": 90,
+        "top": 70,
+        "width": 800,
+        "height": 60,
+        "content": "<p style='text-align: left;'><span style='color: #55B691; font-size: 36px; font-weight: bold; opacity: 0.5;'>Large loss load</span></p>",
+        "rotate": 0,
+        "defaultFontName": "{{fontName}}",
+        "defaultColor": "#55B691"
+      },
+      {
+        "type": "dashboard-table",
+        "id": "dashboard-table-1",
+        "left": 50,
+        "top": 150,
+        "width": 250,
+        "height": 200,
+        "isTemplatePlaceholder": true,
+        "portfolioId": null,
+        "bounceId": null,
+        "isInvisible": false,
+        "largeLossLoad": true,
+        "lock": true
+      },
+      {
+        "type": "text",
+        "id": "bottom-text",
+        "left": 30,
+        "top": 380,
+        "width": 900,
+        "height": 100,
+        "content": "<p style='text-align: left;'><span style='color: #ffffff; font-size: 16px;'>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</span></p>",
+        "rotate": 0,
+        "defaultFontName": "{{fontName}}",
+        "defaultColor": "#ffffff"
+      },
+      {
+        "type": "text",
+        "id": "sybil-text",
+        "left": 10,
+        "top": 580,
+        "width": 200,
+        "height": 30,
+        "content": "<p style='text-align: left;'><span style='color: #ffffff; font-size: 16px; font-family: Arial;'>sybil.cloud</span></p>",
+        "rotate": 0,
+        "defaultFontName": "Arial",
+        "defaultColor": "#ffffff"
+      }
+    ],
+    "background": {
+      "type": "image",
+      "image": {
+        "src": "/images/Title_and_content2.svg",
+        "size": "cover"
+      }
+    }
   }
 ]

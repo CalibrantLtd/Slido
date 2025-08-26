@@ -1,0 +1,88 @@
+<svg width="500" height="200" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .header-rect { fill: #d5e8d4; stroke: #ccc; stroke-width: 0.5; }
+    .data-rect { stroke: #ccc; stroke-width: 0.5; }
+    .text { font-family: Arial, sans-serif; font-size: 12px; fill: #333; }
+    .header-text { font-weight: bold; }
+    .total-text { font-weight: bold; fill: #333; }
+  </style>
+  
+  <!-- Header Row -->
+  <rect x="0" y="0" width="125" height="30" fill="#d5e8d4" stroke="#ccc"/>
+  <text x="10" y="20" class="text header-text">Period</text>
+  
+  <rect x="125" y="0" width="125" height="30" fill="#d5e8d4" stroke="#ccc"/>
+  <text x="135" y="20" class="text header-text">GEP</text>
+  
+  <rect x="250" y="0" width="125" height="30" fill="#d5e8d4" stroke="#ccc"/>
+  <text x="260" y="20" class="text header-text">GWP</text>
+  
+  <rect x="375" y="0" width="125" height="30" fill="#d5e8d4" stroke="#ccc"/>
+  <text x="385" y="20" class="text header-text">Large Ultimate</text>
+  
+  <!-- Data Rows -->
+  <!-- Row 1 -->
+  <rect x="0" y="30" width="125" height="30" fill="#ffffff" stroke="#ccc"/>
+  <text x="10" y="50" class="text">X</text>
+  
+  <rect x="125" y="30" width="125" height="30" fill="#ffffff" stroke="#ccc"/>
+  <text x="135" y="50" class="text">0</text>
+  
+  <rect x="250" y="30" width="125" height="30" fill="#ffffff" stroke="#ccc"/>
+  <text x="260" y="50" class="text">0</text>
+  
+  <rect x="375" y="30" width="125" height="30" fill="#ffffff" stroke="#ccc"/>
+  <text x="385" y="50" class="text">0</text>
+  
+  <!-- Row 2 -->
+  <rect x="0" y="60" width="125" height="30" fill="#d5e8d4" stroke="#ccc"/>
+  <text x="10" y="80" class="text">X</text>
+  
+  <rect x="125" y="60" width="125" height="30" fill="#d5e8d4" stroke="#ccc"/>
+  <text x="135" y="80" class="text">0</text>
+  
+  <rect x="250" y="60" width="125" height="30" fill="#d5e8d4" stroke="#ccc"/>
+  <text x="260" y="80" class="text">0</text>
+  
+  <rect x="375" y="60" width="125" height="30" fill="#d5e8d4" stroke="#ccc"/>
+  <text x="385" y="80" class="text">0</text>
+  
+  <!-- Row 3 -->
+  <rect x="0" y="90" width="125" height="30" fill="#ffffff" stroke="#ccc"/>
+  <text x="10" y="110" class="text">X</text>
+  
+  <rect x="125" y="90" width="125" height="30" fill="#ffffff" stroke="#ccc"/>
+  <text x="135" y="110" class="text">0</text>
+  
+  <rect x="250" y="90" width="125" height="30" fill="#ffffff" stroke="#ccc"/>
+  <text x="260" y="110" class="text">0</text>
+  
+  <rect x="375" y="90" width="125" height="30" fill="#ffffff" stroke="#ccc"/>
+  <text x="385" y="110" class="text">0</text>
+  
+  <!-- Row 4 -->
+  <rect x="0" y="120" width="125" height="30" fill="#ffffff" stroke="#ccc"/>
+  <text x="10" y="140" class="text">X</text>
+  
+  <rect x="125" y="120" width="125" height="30" fill="#ffffff" stroke="#ccc"/>
+  <text x="135" y="140" class="text">0</text>
+  
+  <rect x="250" y="120" width="125" height="30" fill="#ffffff" stroke="#ccc"/>
+  <text x="260" y="140" class="text">0</text>
+  
+  <rect x="375" y="120" width="125" height="30" fill="#ffffff" stroke="#ccc"/>
+  <text x="385" y="140" class="text">0</text>
+  
+  <!-- Total Row -->
+  <rect x="0" y="150" width="125" height="30" fill="#d5e8d4" stroke="#ccc"/>
+  <text x="10" y="170" class="text total-text">Total</text>
+  
+  <rect x="125" y="150" width="125" height="30" fill="#d5e8d4" stroke="#ccc"/>
+  <text x="135" y="170" class="text total-text">0</text>
+  
+  <rect x="250" y="150" width="125" height="30" fill="#d5e8d4" stroke="#ccc"/>
+  <text x="260" y="170" class="text total-text">0</text>
+  
+  <rect x="375" y="150" width="125" height="30" fill="#d5e8d4" stroke="#ccc"/>
+  <text x="385" y="170" class="text total-text">0</text>
+</svg>
