@@ -30,6 +30,8 @@ const props = defineProps<{
   largeOnly?: boolean;
   weatherOnly?: boolean;
   totalUltimateOnly?: boolean;
+  lossRatiosOnly?: boolean;
+  attritionalLargeExpanded?: boolean;
 }>();
 const mqy = computed(() => dashboardStore.dashboards.mqy);
 
@@ -67,6 +69,9 @@ const filteredShowColumnTotal = computed(() => {
   if (props.totalUltimateOnly) {
     return true; // Force show total columns
   }
+  if (props.lossRatiosOnly) {
+    return true; // Force show total columns
+  }
   return dashboardStore.showColumnTotal;
 });
 const totalMargin = computed(() => dashboardStore.totalMargin);
@@ -74,6 +79,9 @@ const totalMargin = computed(() => dashboardStore.totalMargin);
 const filteredTotalMargin = computed(() => {
   if (props.totalUltimateOnly) {
     return 112; // Force expand total ultimate columns
+  }
+  if (props.lossRatiosOnly) {
+    return 0; // Keep total columns collapsed
   }
   return dashboardStore.totalMargin;
 });
@@ -102,6 +110,27 @@ const filteredMargin = computed(() => {
     // Keep all claims types collapsed (0) but show total ultimate columns
     Object.keys(result).forEach(key => {
       result[key] = 0; // collapsed state
+    });
+    return result;
+  }
+  if (props.lossRatiosOnly) {
+    const result: any = { ...dashboardStore.margin };
+    // Keep all claims types collapsed (0) - show Period, GWP, GEP, and all loss ratio columns but none expanded
+    Object.keys(result).forEach(key => {
+      result[key] = 0; // collapsed state
+    });
+    return result;
+  }
+  if (props.attritionalLargeExpanded) {
+    const result: any = { ...dashboardStore.margin };
+    // Expand only ATTRITIONAL and LARGE columns, keep others collapsed
+    Object.keys(result).forEach(key => {
+      const upperKey = key.toUpperCase();
+      if (upperKey === 'ATTRITIONAL' || upperKey === 'LARGE') {
+        result[key] = 112; // expanded state
+      } else {
+        result[key] = 0; // collapsed state
+      }
     });
     return result;
   }
@@ -168,6 +197,27 @@ const filteredShowColumn = computed(() => {
     });
     return filtered;
   }
+  if (props.lossRatiosOnly) {
+    const filtered: any = {};
+    // Show all claims types but collapsed (false) - show Period, GWP, GEP, and all loss ratio columns but none expanded
+    Object.keys(dashboardStore.showColumn).forEach(key => {
+      filtered[key] = false; // Force collapsed state
+    });
+    return filtered;
+  }
+  if (props.attritionalLargeExpanded) {
+    const filtered: any = {};
+    // Show all claims types, but only ATTRITIONAL and LARGE are expanded (true), others collapsed (false)
+    Object.keys(dashboardStore.showColumn).forEach(key => {
+      const upperKey = key.toUpperCase();
+      if (upperKey === 'ATTRITIONAL' || upperKey === 'LARGE') {
+        filtered[key] = true; // expanded state
+      } else {
+        filtered[key] = false; // collapsed state
+      }
+    });
+    return filtered;
+  }
   return dashboardStore.showColumn;
 });
 
@@ -184,6 +234,9 @@ const filteredClaimsType = computed(() => {
   if (props.totalUltimateOnly) {
     return portfolioStore.parameters.claims_nature || ['ATTRITIONAL', 'LARGE'];
   }
+  if (props.lossRatiosOnly) {
+    return portfolioStore.parameters.claims_nature || ['ATTRITIONAL', 'LARGE'];
+  }
   return portfolioStore.parameters.claims_nature || ['ATTRITIONAL', 'LARGE'];
 });
 
@@ -195,6 +248,12 @@ const filteredVisibleColumns = computed(() => {
   if (props.totalUltimateOnly) {
     return [1, 2, 3]; // Show GWP, GEP, and CCR (for total ultimate columns)
   }
+  if (props.lossRatiosOnly) {
+    return [1, 2, 3]; // Show GWP, GEP, and CCR (for all loss ratio columns)
+  }
+  if (props.attritionalLargeExpanded) {
+    return [1, 2, 3]; // Show GWP, GEP, and CCR (for loss ratio columns)
+  }
   return dashboardStore.visibleColumns;
 });
 
@@ -204,6 +263,12 @@ const filteredMainColumns = computed(() => {
     return [];
   }
   if (props.totalUltimateOnly) {
+    return [1, 2]; // Show GWP and GEP, hide Commission, CCR, Seasonality
+  }
+  if (props.lossRatiosOnly) {
+    return [1, 2]; // Show GWP and GEP, hide Commission, CCR, Seasonality
+  }
+  if (props.attritionalLargeExpanded) {
     return [1, 2]; // Show GWP and GEP, hide Commission, CCR, Seasonality
   }
   return dashboardStore.visibleColumns;
@@ -247,6 +312,31 @@ function updateNaturalSize() {
                              (ultimateColumns * 112);
       
       naturalWidth.value = calculatedWidth + 20; // Add padding
+    } else if (props.lossRatiosOnly) {
+      // For loss ratios only mode, calculate based on expected column widths,
+      // then verify against measured DOM width to avoid underestimation.
+      const periodColumnWidth = 112;
+      const gwpGepColumns = 2; // GWP and GEP
+      const claimsTypeCount = (portfolioStore.parameters?.claims_nature as string[])?.length || 2;
+      const baseClaimsColumns = 1; // Each claims type shows 1 column (collapsed)
+
+      let calculatedWidth =
+        periodColumnWidth + gwpGepColumns * 112 + claimsTypeCount * baseClaimsColumns * 112;
+
+      // Measure the furthest right boundary of fixed-width cells as a safety net
+      try {
+        const tableRect = (tableEl.value as HTMLElement).getBoundingClientRect();
+        const absCells = (tableEl.value as HTMLElement).querySelectorAll('.fixWidth');
+        let maxRight = 0;
+        absCells.forEach((node) => {
+          const rect = (node as HTMLElement).getBoundingClientRect();
+          const right = rect.right - tableRect.left;
+          if (right > maxRight) maxRight = right;
+        });
+        if (maxRight > calculatedWidth) calculatedWidth = maxRight;
+      } catch {}
+
+      naturalWidth.value = calculatedWidth + 10; // small padding
     } else {
       let measuredWidth = tableEl.value.scrollWidth || tableEl.value.offsetWidth || 1200;
 
@@ -317,7 +407,7 @@ onBeforeUnmount(() => {
   window.removeEventListener('resize', updateNaturalSize);
 });
 
-const FUDGE_X = 0.995;
+const FUDGE_X = 0.998; // render slightly wider while still fitting container
 const FUDGE_Y = 0.995;
 const scaleX = computed(() => {
   const cw = containerWidthPx.value || props.containerWidth || 1;
@@ -419,7 +509,8 @@ function toggleIsExposure() {
         :style="{
           borderSpacing: 0,
           fontSize: scaledFontSize + 'px',
-          tableLayout: 'auto'
+          tableLayout: props.lossRatiosOnly ? 'fixed' : 'auto',
+          width: props.lossRatiosOnly ? '100%' : 'auto'
         }"
       >
         <thead :class="['header-teal', isScaledDown ? '' : 'sticky top-0 z-30']">
@@ -433,6 +524,7 @@ function toggleIsExposure() {
               :hide-totals="hideTotals"
               :claims-type="filteredClaimsType"
               :total-ultimate-only="props.totalUltimateOnly"
+              :loss-ratios-only="props.lossRatiosOnly"
               @on-change-ccr-margin="onChangeCcrMargin"
             />
           </tr>

@@ -748,7 +748,9 @@ const replaceMockTableWithRealData = async (mockTable: any, wizardData: any, cur
       attritionalOnly: element.attritionalOnly,
       largeOnly: element.largeOnly,
       weatherOnly: element.weatherOnly,
-      totalUltimateOnly: element.totalUltimateOnly
+      totalUltimateOnly: element.totalUltimateOnly,
+      lossRatiosOnly: element.lossRatiosOnly,
+      attritionalLargeExpanded: element.attritionalLargeExpanded
     }
     
     element.isTemplatePlaceholder = false
@@ -771,6 +773,12 @@ const replaceMockTableWithRealData = async (mockTable: any, wizardData: any, cur
     }
     if (template.value?.id === 'title-and-total-ultimate') {
       element.totalUltimateOnly = true
+    }
+    if (template.value?.id === 'title-and-loss-ratios') {
+      element.lossRatiosOnly = true
+    }
+    if (template.value?.id === 'title-table-text-expanded') {
+      element.attritionalLargeExpanded = true
     }
     
     const svgImage = slide.elements.find(e => e.type === 'image' && e.src?.includes('MockTable.svg'))

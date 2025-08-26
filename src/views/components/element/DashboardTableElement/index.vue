@@ -43,6 +43,8 @@
           :large-only="elementInfo.largeOnly"
           :weather-only="elementInfo.weatherOnly"
           :total-ultimate-only="elementInfo.totalUltimateOnly"
+          :loss-ratios-only="elementInfo.lossRatiosOnly"
+          :attritional-large-expanded="elementInfo.attritionalLargeExpanded"
         />
         <MockDashboardTable v-else />
         
@@ -85,6 +87,8 @@ const props = defineProps<{
     largeOnly?: boolean
     weatherOnly?: boolean
     totalUltimateOnly?: boolean
+    lossRatiosOnly?: boolean
+    attritionalLargeExpanded?: boolean
   }
   selectElement: (e: MouseEvent | TouchEvent, element: PPTElement, canMove?: boolean) => void
   contextmenus: () => ContextmenuItem[] | null

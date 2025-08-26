@@ -27,6 +27,7 @@ const props = defineProps<{
   hideTotals?: boolean;
   claimsType?: string[];
   totalUltimateOnly?: boolean;
+  lossRatiosOnly?: boolean;
 }>();
 
 const visibleColumns = computed(() => props.visibleColumns || dashboardStore.visibleColumns);
@@ -180,6 +181,11 @@ defineEmits(['onChangeCcrMargin']);
             ? 6  // Total Ultimate columns: Paid, O/S, Incurred, IBNR, Unearned, Ultimate
             : 5) // Total Ultimate columns: Paid, O/S, Incurred, IBNR, Ultimate
         )
+        : props.lossRatiosOnly
+        ? (
+          // For loss-ratios-only: span the entire table width
+          claimsType.length + 1 // Period + GWP + GEP + claims type columns
+        )
         : claimsType.length +
           1 +
           ((<any>Object).values(margin).reduce((ps: number, s: number) => ps + s, 0) / 112) * 4 +
@@ -200,6 +206,11 @@ defineEmits(['onChangeCcrMargin']);
           (dashboardStore.underwriting_loss_ratios === 'Written' && dashboardStore.dashboards.uw_acc === 'uw'
             ? 6 * 112  // Total Ultimate columns: Paid, O/S, Incurred, IBNR, Unearned, Ultimate
             : 5 * 112) + 'px' // Total Ultimate columns: Paid, O/S, Incurred, IBNR, Ultimate
+        )
+        : props.lossRatiosOnly
+        ? (
+          // For loss-ratios-only: span the entire table width
+          '100%' // Span the entire table width
         )
         : (
           112 * (claimsType.length + 1) -
@@ -228,6 +239,11 @@ defineEmits(['onChangeCcrMargin']);
             ? 6 * 112  // Total Ultimate columns: Paid, O/S, Incurred, IBNR, Unearned, Ultimate
             : 5 * 112) + 'px' // Total Ultimate columns: Paid, O/S, Incurred, IBNR, Ultimate
         )
+        : props.lossRatiosOnly
+        ? (
+          // For loss-ratios-only: span the entire table width
+          '100%' // Span the entire table width
+        )
         : (
           112 * (claimsType.length + 1) +
           (<any>Object).values(margin).reduce((ps: number, s: number) => ps + s, 0) *
@@ -253,6 +269,11 @@ defineEmits(['onChangeCcrMargin']);
           (dashboardStore.underwriting_loss_ratios === 'Written' && dashboardStore.dashboards.uw_acc === 'uw'
             ? 6 * 112  // Total Ultimate columns: Paid, O/S, Incurred, IBNR, Unearned, Ultimate
             : 5 * 112) + 'px' // Total Ultimate columns: Paid, O/S, Incurred, IBNR, Ultimate
+        )
+        : props.lossRatiosOnly
+        ? (
+          // For loss-ratios-only: span the entire table width
+          '100%' // Span the entire table width
         )
         : (
           112 * (claimsType.length + 1) +
