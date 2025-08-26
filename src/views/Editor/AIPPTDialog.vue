@@ -1,0 +1,285 @@
+<template>
+  <div class="aippt-dialog">
+    <div class="header">
+      <span class="title">Write a prompt to generate contents</span>
+      <span class="subtite" v-if="step === 'template'">Select a template to start generating slides</span>
+      <span class="subtite" v-else-if="step === 'outline'">Review and confirm the content outline below</span>
+      <span class="subtite" v-else>Enter a topic below, and provide additional information such as industry, position, subject, purpose, etc.</span>
+    </div>
+    
+    <template v-if="step === 'setup'">
+      <Input class="input" 
+        ref="inputRef"
+        v-model:value="keyword" 
+        :maxlength="50" 
+        placeholder="Enter PPT topic, e.g.: Career Planning for College Students" 
+        @enter="createOutline()"
+      >
+        <template #suffix>
+          <span class="count">{{ keyword.length }} / 50</span>
+          
+          <div class="submit p-2" type="primary" @click="createOutline()"><IconSend class="icon" /></div>
+        </template>
+      </Input>
+      <div class="recommends">
+        <div class="recommend" v-for="(item, index) in recommends" :key="index" @click="keyword = item">{{ item }}</div>
+      </div>
+    </template>
+    <div class="preview" v-if="step === 'outline'">
+      <pre ref="outlineRef">{{ outline }}</pre>
+      <div class="btns" v-if="!outlineCreating">
+        <Button class="btn" type="primary" @click="step = 'template'">Select Template</Button>
+        <Button class="btn" @click="outline = ''; step = 'setup'">Regenerate</Button>
+      </div>
+    </div>
+    <div class="select-template" v-if="step === 'template'">
+      <div class="templates">
+        <div class="template" 
+          :class="{ 'selected': selectedTemplate === template.id }" 
+          v-for="template in templates" 
+          :key="template.id" 
+          @click="selectedTemplate = template.id"
+        >
+          <img :src="template.cover" :alt="template.name">
+        </div>
+      </div>
+      <div class="btns">
+        <Button class="btn" type="primary" @click="createPPT()">Continue</Button>
+        <Button class="btn" @click="outline = ''; step = 'setup'">Regenerate</Button>
+      </div>
+    </div>
+
+    <FullscreenSpin :loading="loading" tip="AI is generating, please wait patiently..." />
+  </div>
+</template>
+
+<script lang="ts" setup>
+import { ref, onMounted } from 'vue'
+import api from '@/services'
+import useAIPPT from '@/hooks/useAIPPT'
+import type { AIPPTSlide } from '@/types/AIPPT'
+import type { Slide } from '@/types/slides'
+import message from '@/utils/message'
+import { useMainStore } from '@/store'
+import Input from '@/components/Input.vue'
+import Button from '@/components/Button.vue'
+import FullscreenSpin from '@/components/FullscreenSpin.vue'
+
+const mainStore = useMainStore()
+const { AIPPT } = useAIPPT()
+
+const language = ref<'zh' | 'en'>('en')
+const keyword = ref('')
+const outline = ref('')
+const selectedTemplate = ref('template_1')
+const loading = ref(false)
+const outlineCreating = ref(false)
+const outlineRef = ref<HTMLElement>()
+const inputRef = ref<InstanceType<typeof Input>>()
+const step = ref<'setup' | 'outline' | 'template'>('setup')
+const templates = ref([
+  { name: 'Red Universal Template', id: 'template_1', cover: 'https://asset.pptist.cn/img/template_1.jpg' },
+  { name: 'Blue Universal Template', id: 'template_2', cover: 'https://asset.pptist.cn/img/template_2.jpg' },
+])
+const recommends = ref([
+  'Career Planning for College Students',
+  'Company Annual Meeting Planning',
+  'How Big Data is Changing the World',
+  'Catering Market Research',
+  'AIGC Applications in Education',
+  'How 5G is Changing Our Lives',
+  'Social Media and Brand Marketing',
+  'Annual Work Summary and Outlook',
+  'Blockchain Technology and Applications',
+]) 
+
+onMounted(() => {
+  setTimeout(() => {
+    inputRef.value!.focus()
+  }, 500)
+})
+
+const createOutline = async () => {
+  if (!keyword.value) return message.error('Please enter a PPT topic first')
+
+  loading.value = true
+  outlineCreating.value = true
+  
+  const stream = await api.AIPPT_Outline(keyword.value, language.value)
+
+  loading.value = false
+  step.value = 'outline'
+
+  const reader: ReadableStreamDefaultReader = stream.body.getReader()
+  const decoder = new TextDecoder('utf-8')
+  
+  const readStream = () => {
+    reader.read().then(({ done, value }) => {
+      if (done) {
+        outlineCreating.value = false
+        return
+      }
+  
+      const chunk = decoder.decode(value, { stream: true })
+      outline.value += chunk
+
+      if (outlineRef.value) {
+        outlineRef.value.scrollTop = outlineRef.value.scrollHeight + 20
+      }
+
+      readStream()
+    })
+  }
+  readStream()
+}
+
+const createPPT = async () => {
+  loading.value = true
+
+  // const AISlides: AIPPTSlide[] = await api.getMockData('AIPPT')
+  const AISlides: AIPPTSlide[] = await api.AIPPT(outline.value, language.value).then(ret => {
+    const obj = JSON.parse(ret.data[0].content)
+    return obj.data
+  })
+  const templateSlides: Slide[] = await api.getFileData(selectedTemplate.value).then(ret => ret.slides)
+  // const templateSlides: Slide[] = await api.getMockData(selectedTemplate.value).then(ret => ret.slides)
+
+  AIPPT(templateSlides, AISlides)
+
+  loading.value = false
+
+  mainStore.setAIPPTDialogState(false)
+}
+</script>
+
+<style lang="scss" scoped>
+.aippt-dialog {
+  margin: -20px;
+  padding: 30px;
+}
+.header {
+  margin-bottom: 12px;
+
+  .title {
+    font-weight: 700;
+    font-size: 18px;
+    margin-right: 8px;
+  }
+  .subtite {
+    color: #888;
+    font-size: 12px;
+  }
+}
+.preview {
+  pre {
+    max-height: 450px;
+    padding: 10px;
+    margin-bottom: 15px;
+    background-color: #f1f1f1;
+    overflow: auto;
+  }
+  .btns {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    .btn {
+      width: 120px;
+      margin: 0 5px;
+    }
+  }
+}
+.select-template {
+  .templates {
+    display: flex;
+    margin-bottom: 10px;
+    @include flex-grid-layout();
+  
+    .template {
+      border: 2px solid $borderColor;
+      border-radius: $borderRadius;
+      @include flex-grid-layout-children(2, 49%);
+
+      &.selected {
+        border-color: $themeColor;
+      }
+  
+      img {
+        width: 100%;
+      }
+    }
+  }
+  .btns {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    .btn {
+      width: 120px;
+      margin: 0 5px;
+    }
+  }
+}
+.configs {
+  margin-top: 5px;
+  display: flex;
+  justify-content: space-between;
+
+  .items {
+    display: flex;
+  }
+  .item {
+    margin-right: 5px;
+  }
+}
+.recommends {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 10px;
+
+  .recommend {
+    font-size: 12px;
+    background-color: #f1f1f1;
+    border-radius: $borderRadius;
+    padding: 3px 5px;
+    margin-right: 5px;
+    margin-top: 5px;
+    cursor: pointer;
+
+    &:hover {
+      color: $themeColor;
+    }
+  }
+}
+.count {
+  font-size: 12px;
+  color: #999;
+  margin-right: 10px;
+}
+.language {
+  font-size: 12px;
+  margin-right: 10px;
+  color: $themeColor;
+  cursor: pointer;
+}
+.submit {
+  height: 20px;
+  font-size: 12px;
+  background-color: $themeColor;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  padding: 0 5px;
+  border-radius: $borderRadius;
+  cursor: pointer;
+
+  &:hover {
+    background-color: $themeHoverColor;
+  }
+
+  .icon {
+    font-size: 15px;
+    margin-right: 3px;
+  }
+}
+</style>
