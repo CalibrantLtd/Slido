@@ -34,7 +34,7 @@
             <div 
               class="viewport" 
               :style="{ 
-                transform: `scale(${scaleX})`,
+                transform: `scale(${scaleX}, ${scaleY})`,
                 transformOrigin: '0 0'
               }"
             >
@@ -42,7 +42,7 @@
                 class="slide-content"
                 :style="{
                   width: '960px',
-                  height: '540px',
+                  height: '580px',
                   position: 'relative',
                   ...getSlideBackgroundStyle(currentSlide.background)
                 }"
@@ -233,7 +233,7 @@ const slideWidth = 720
 const slideHeight = 405
 
 const scaleX = slideWidth / 960  
-const scaleY = slideHeight / 540 
+const scaleY = slideHeight / 580 
 
 const currentSlide = computed(() => {
   return slides.value[currentSlideIndex.value] || { elements: [] }
@@ -919,9 +919,6 @@ const shouldHideElement = (element: any) => {
     }
   }
   
-  if (element.type === 'dashboard-table' && element.isTemplatePlaceholder) {
-    return true
-  }
   
   return false
 }

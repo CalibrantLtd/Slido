@@ -76,6 +76,10 @@ const { selectAllElements } = useSelectElement()
 
 const contextmenus = (): ContextmenuItem[] => {
   if (props.elementInfo.lock) {
+    // Dashboard tables in templates cannot be unlocked
+    if (props.elementInfo.type === 'dashboard-table') {
+      return []
+    }
     return [{
       text: 'Unlock', 
       handler: () => unlockElement(props.elementInfo),

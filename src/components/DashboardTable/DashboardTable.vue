@@ -429,6 +429,10 @@ const dashboardData = computed<DashboardData>(() => {
   return data;
 });
 
+const hasData = computed(() => {
+  return dashboardData.value && dashboardStore.totalData && Object.keys(dashboardData.value).length > 0;
+});
+
 const totalDashboardData = computed<DashboardData>(() => {
   const obj: any = {};
   obj[0] = dashboardStore.totalData || {};
@@ -483,13 +487,23 @@ function toggleIsExposure() {
 }
 </script>
 <template>
-  <div>
+  <div v-if="!hasData" 
+    :style="{
+      width: '100%',
+      height: '100%',
+      backgroundImage: 'url(/images/MockTable.svg)',
+      backgroundSize: '100% 100%',
+      backgroundRepeat: 'no-repeat',
+      backgroundPosition: 'center'
+    }"
+  ></div>
+  <div v-else :style="{ width: '100%', height: '100%' }">
     <div 
       class="table-panel relative shadow-md" 
       :style="{
         overflow: 'hidden',
         width: props.containerWidth ? props.containerWidth + 'px' : '100%',
-        height: props.containerHeight ? props.containerHeight + 'px' : 'auto'
+        height: props.containerHeight ? props.containerHeight + 'px' : '100%'
       }"
       ref="containerEl"
     >
@@ -545,7 +559,7 @@ function toggleIsExposure() {
             />
           </tr>
         </thead>
-        <tbody v-if="dashboardData && dashboardStore.totalData && Object.keys(dashboardData).length > 0">
+        <tbody>
           <template v-for="(n, idx) in dashboardData" :key="idx">
             <tr>
               <ValueRow
@@ -715,13 +729,6 @@ function toggleIsExposure() {
               row-class="header-teal"
               :mqy="mqy"
             />
-          </tr>
-        </tbody>
-        <tbody v-else>
-          <tr>
-            <td colspan="10" style="text-align: center; padding: 20px;">
-              {{ !dashboardData ? 'No dashboard data' : !dashboardStore.totalData ? 'No total data' : 'No data rows' }}
-            </td>
           </tr>
         </tbody>
       </table>

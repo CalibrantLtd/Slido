@@ -3,7 +3,7 @@
     class="dashboard-table-element"
     :class="{ 
       'lock': elementInfo.lock, 
-      'invisible': elementInfo.isInvisible && elementInfo.isTemplatePlaceholder 
+      'invisible': elementInfo.isInvisible 
     }"
     :data-element-id="elementInfo.id"
     :style="{
@@ -27,6 +27,8 @@
         v-contextmenu="contextmenus"
         @mousedown="$event => handleSelectElement($event)"
         @touchstart="$event => handleSelectElement($event)"
+        @dragstart.prevent
+        @selectstart.prevent
       >
         <ElementOutline
           :width="elementInfo.width"
@@ -35,7 +37,7 @@
         />
         <!-- Use real DashboardTable if element has real data, otherwise use mock -->
         <DashboardTable 
-          v-if="!elementInfo.isTemplatePlaceholder && elementInfo.selectedFilters" 
+          v-if="elementInfo.type === 'dashboard-table'" 
           overflow="auto"
           :container-width="elementInfo.width"
           :container-height="elementInfo.height"
@@ -46,11 +48,7 @@
           :loss-ratios-only="elementInfo.lossRatiosOnly"
           :attritional-large-expanded="elementInfo.attritionalLargeExpanded"
         />
-        <MockDashboardTable v-else />
         
-        <!-- Drag handlers to ensure the element can be selected -->
-        <div class="drag-handler top"></div>
-        <div class="drag-handler bottom"></div>
       </div>
     </div>
   </div>
@@ -61,7 +59,6 @@ import { ref, onMounted } from 'vue'
 import { type PPTElement } from '@/types/slides'
 import type { ContextmenuItem } from '@/components/Contextmenu/types'
 import DashboardTable from '@/components/DashboardTable/DashboardTable.vue'
-import MockDashboardTable from '@/components/DashboardTable/MockDashboardTable.vue'
 import ElementOutline from '@/views/components/element/ElementOutline.vue'
 import { useDashboardStore } from '@/store/dashboard'
 import { portfolioService } from '@/services/portfolioService'
@@ -146,10 +143,12 @@ onMounted(async () => {
   }
 })
 
-const handleSelectElement = (e: MouseEvent | TouchEvent, canMove = true) => {
+const handleSelectElement = (e: MouseEvent | TouchEvent, canMove = false) => {
   if (props.elementInfo.lock) return
   e.stopPropagation()
+  e.preventDefault()
 
+  // Disable resizing for template dashboard tables
   props.selectElement(e, props.elementInfo, canMove)
 }
 </script>
@@ -159,6 +158,11 @@ const handleSelectElement = (e: MouseEvent | TouchEvent, canMove = true) => {
   position: absolute;
   cursor: pointer;
   user-select: none;
+  pointer-events: none; /* Disable all pointer events */
+}
+
+.dashboard-table-element .element-content {
+  pointer-events: auto; /* Re-enable for selection only */
 }
 
 .rotate-wrapper {
@@ -172,21 +176,7 @@ const handleSelectElement = (e: MouseEvent | TouchEvent, canMove = true) => {
   height: 100%;
 }
 
-.drag-handler {
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 10px;
-  z-index: 1;
-}
-
-.drag-handler.top {
-  top: 0;
-}
-
-.drag-handler.bottom {
-  bottom: 0;
-}
+/* Drag handlers removed for template dashboard tables */
 
 .lock {
   cursor: not-allowed;
